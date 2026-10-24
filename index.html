@@ -1,241 +1,917 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram MOD - Configuração</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #17212b; color: #f5f5f5; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZERYX // Cyberpunk Social Network</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            zeryx: {
+              bg: '#090a0f',
+              card: '#12151e',
+              border: '#1f2638',
+              accent: '#ff2a4b',
+              glow: '#ff2a4b80',
+              cyan: '#00f3ff',
+              text: '#e2e8f0',
+              muted: '#64748b'
+            }
+          },
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Cyberpunk Styles -->
+  <style>
+    body {
+      background-color: #090a0f;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 42, 75, 0.08) 0%, transparent 70%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
+    }
+
+    .neon-border {
+      border: 1px solid rgba(255, 42, 75, 0.3);
+      box-shadow: 0 0 10px rgba(255, 42, 75, 0.15);
+    }
+
+    .neon-text {
+      text-shadow: 0 0 8px rgba(255, 42, 75, 0.6);
+    }
+
+    .neon-btn {
+      background: linear-gradient(135deg, #ff2a4b 0%, #b30024 100%);
+      box-shadow: 0 0 12px rgba(255, 42, 75, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .neon-btn:hover {
+      box-shadow: 0 0 20px rgba(255, 42, 75, 0.7);
+      transform: translateY(-1px);
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ff2a4b;
+    }
+  </style>
+
+  <!-- Firebase Compatibility Scripts v9.23.0 -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
-<body class="h-full flex flex-col items-center justify-center p-4 antialiased selection:bg-sky-500 selection:text-white relative overflow-hidden">
+<body class="min-h-screen flex flex-col antialiased selection:bg-zeryx-accent selection:text-white">
 
-    <!-- PASSO 1: BOAS-VINDAS TELEGRAM MOD -->
-    <div id="step-welcome" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl">
-        <div class="w-20 h-20 bg-sky-500 text-white rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg shadow-sky-500/30">
-            <i class="fa-brands fa-telegram"></i>
+  <!-- TELA INICIAL DE CADASTRO / LOGIN -->
+  <div id="view-auth" class="fixed inset-0 z-50 bg-[#090a0f] flex items-center justify-center p-4">
+    <div class="bg-zeryx-card border border-zeryx-border rounded-2xl p-6 md:p-8 max-w-md w-full space-y-6 shadow-[0_0_30px_rgba(255,42,75,0.2)]">
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 rounded-2xl bg-zeryx-accent/10 border border-zeryx-accent flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(255,42,75,0.4)]">
+          <i class="fa-solid fa-microchip text-zeryx-accent text-3xl"></i>
         </div>
-        <div class="space-y-1.5">
-            <h2 class="text-lg font-bold text-white">Telegram MOD</h2>
-            <p class="text-[12px] text-slate-400 leading-relaxed">Para iniciar e acessar seus chats com segurança, precisamos validar os recursos do dispositivo.</p>
+        <h1 class="font-orbitron font-black text-3xl tracking-wider text-white neon-text">
+          ZERYX<span class="text-zeryx-accent">.IO</span>
+        </h1>
+        <p class="text-xs font-mono text-zeryx-muted uppercase tracking-widest">REGISTO DE PROTOCOLO DA MATRIZ</p>
+      </div>
+
+      <form id="auth-register-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-orbitron text-zeryx-muted mb-1">NOME DE OPERADOR</label>
+          <input type="text" id="reg-name" required class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-zeryx-accent" placeholder="Ex: Arcanjo">
         </div>
-        <button onclick="nextStep(2)" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-sky-500/30 transition active:scale-95">
-            Iniciar Configuração
+
+        <div>
+          <label class="block text-xs font-orbitron text-zeryx-muted mb-1">USERNAME (@HANDLE)</label>
+          <input type="text" id="reg-username" required class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-zeryx-accent" placeholder="Ex: arcanjo_zrx">
+        </div>
+
+        <div>
+          <label class="block text-xs font-orbitron text-zeryx-muted mb-1">URL DO AVATAR (OPCIONAL)</label>
+          <input type="url" id="reg-avatar" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-zeryx-accent" placeholder="https://...">
+        </div>
+
+        <div>
+          <label class="block text-xs font-orbitron text-zeryx-muted mb-1">BIO CYBERPUNK</label>
+          <textarea id="reg-bio" rows="2" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-zeryx-accent resize-none" placeholder="Criador de conteúdos e transmissões..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full neon-btn text-white text-xs font-orbitron font-bold py-3.5 rounded-lg tracking-wider uppercase">
+          ENTRAR NA REDE ZERYX
         </button>
+      </form>
     </div>
+  </div>
 
-    <!-- PASSO 2: PERMISSÃO DE ÁUDIO E MICROFONE -->
-    <div id="step-audio" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl hidden">
-        <div class="w-16 h-16 bg-orange-500/20 text-orange-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-            <i class="fa-solid fa-microphone"></i>
+  <!-- TOP HEADER -->
+  <header id="app-header" class="hidden sticky top-0 z-40 bg-[#090a0f]/90 backdrop-blur-md border-b border-zeryx-border px-4 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('feed')">
+        <div class="w-10 h-10 rounded-lg bg-zeryx-accent/10 border border-zeryx-accent flex items-center justify-center shadow-[0_0_12px_rgba(255,42,75,0.3)]">
+          <i class="fa-solid fa-microchip text-zeryx-accent text-xl"></i>
         </div>
-        <div class="space-y-1">
-            <h2 class="text-base font-bold text-white">Áudio e Chamadas</h2>
-            <p class="text-[11px] text-slate-400 leading-relaxed">Permitir gravação de áudio em tempo real para notas de voz e chamadas.</p>
+        <div>
+          <h1 class="font-orbitron font-black text-2xl tracking-wider text-white neon-text">
+            ZERYX<span class="text-zeryx-accent">.IO</span>
+          </h1>
+          <p class="text-[9px] font-mono text-zeryx-muted -mt-1 tracking-widest uppercase">NET_PROTOCOL_V4.8</p>
         </div>
-        <button onclick="requestAudioPermission()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs transition active:scale-95">
-            Autorizar Microfone
+      </div>
+
+      <div class="flex items-center space-x-3 bg-zeryx-card border border-zeryx-border rounded-full py-1.5 px-3">
+        <img id="header-avatar" src="" class="w-8 h-8 rounded-full bg-zeryx-bg border border-zeryx-accent object-cover">
+        <div class="hidden sm:block text-left">
+          <div id="header-name" class="text-xs font-semibold text-white leading-tight">--</div>
+          <div id="header-username" class="text-[10px] font-mono text-zeryx-accent leading-tight">@--</div>
+        </div>
+        <button onclick="logoutUser()" class="text-zeryx-muted hover:text-red-500 transition-colors pl-2" title="Desconectar">
+          <i class="fa-solid fa-power-off text-sm"></i>
         </button>
+      </div>
     </div>
+  </header>
 
-    <!-- PASSO 3: PERMISSÃO DE CÂMERA -->
-    <div id="step-camera" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl hidden">
-        <div class="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-            <i class="fa-solid fa-camera"></i>
-        </div>
-        <div class="space-y-1">
-            <h2 class="text-base font-bold text-white">Câmera e Fotos</h2>
-            <p class="text-[11px] text-slate-400 leading-relaxed">Necessário para envio de fotos, selfies e videochamadas no chat.</p>
-        </div>
-        <button onclick="requestCameraPermission()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs transition active:scale-95">
-            Autorizar Câmera
-        </button>
-    </div>
+  <!-- MAIN APP CONTAINER -->
+  <div id="main-app-container" class="hidden max-w-7xl mx-auto w-full flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 p-4 md:p-6">
+    
+    <!-- LEFT SIDEBAR NAV -->
+    <aside class="md:col-span-3 flex md:flex-col justify-between space-y-4">
+      <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-3 w-full">
+        <nav class="flex md:flex-col justify-around md:justify-start gap-1">
+          <button id="nav-feed" onclick="switchTab('feed')" class="nav-btn flex items-center space-x-3 px-4 py-3 rounded-lg text-white bg-zeryx-accent/10 border-l-4 border-zeryx-accent transition-all">
+            <i class="fa-solid fa-video text-zeryx-accent text-lg"></i>
+            <span class="font-orbitron text-xs md:text-sm font-semibold tracking-wider hidden sm:inline">FOR YOU</span>
+          </button>
+          
+          <button id="nav-chat" onclick="switchTab('chat')" class="nav-btn flex items-center space-x-3 px-4 py-3 rounded-lg text-zeryx-muted hover:text-white hover:bg-white/5 transition-all">
+            <i class="fa-solid fa-comments text-lg"></i>
+            <span class="font-orbitron text-xs md:text-sm font-semibold tracking-wider hidden sm:inline">CHAT PRIVADO</span>
+          </button>
 
-    <!-- PASSO 4: PERMISSÃO DE LOCALIZAÇÃO (GPS) -->
-    <div id="step-location" class="max-w-xs w-full bg-[#242f3d] border border-[#2b3847] rounded-3xl p-6 text-center space-y-5 shadow-2xl hidden">
-        <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-            <i class="fa-solid fa-location-dot"></i>
-        </div>
-        <div class="space-y-1">
-            <h2 class="text-base font-bold text-white">Localização GPS</h2>
-            <p class="text-[11px] text-slate-400 leading-relaxed">Permitir compartilhamento de localização nos chats e mapas.</p>
-        </div>
-        <button onclick="requestLocationPermission()" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-2xl text-xs transition active:scale-95">
-            Autorizar Localização
-        </button>
-    </div>
+          <button id="nav-profile" onclick="switchTab('profile')" class="nav-btn flex items-center space-x-3 px-4 py-3 rounded-lg text-zeryx-muted hover:text-white hover:bg-white/5 transition-all">
+            <i class="fa-solid fa-user text-lg"></i>
+            <span class="font-orbitron text-xs md:text-sm font-semibold tracking-wider hidden sm:inline">MEU PERFIL</span>
+          </button>
 
-    <!-- TELA DE CHAT FALSA (Exibida após todas as etapas) -->
-    <div id="telegram-chat-container" class="hidden absolute inset-0 bg-[#17212b] flex flex-col z-20">
-        <div class="bg-[#242f3d] px-4 py-3 flex items-center justify-between border-b border-[#2b3847]">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center text-white font-bold">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </div>
+          <button id="nav-settings" onclick="switchTab('settings')" class="nav-btn flex items-center space-x-3 px-4 py-3 rounded-lg text-zeryx-muted hover:text-white hover:bg-white/5 transition-all">
+            <i class="fa-solid fa-gear text-lg"></i>
+            <span class="font-orbitron text-xs md:text-sm font-semibold tracking-wider hidden sm:inline">DEFINIÇÕES</span>
+          </button>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- CENTER / MAIN CONTENT -->
+    <main class="md:col-span-9 space-y-6">
+
+      <!-- VIEW: FEED "FOR YOU" -->
+      <section id="view-feed" class="space-y-6">
+        <!-- Criar Publicação -->
+        <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-4 md:p-5 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-1 h-full bg-zeryx-accent"></div>
+          <h2 class="font-orbitron text-sm font-bold tracking-wider text-zeryx-accent mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-plus text-xs"></i> NOVA TRANSMISSÃO / VÍDEO
+          </h2>
+          
+          <form id="create-post-form" class="space-y-3">
+            <textarea id="post-content" rows="2" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white placeholder-zeryx-muted focus:outline-none focus:border-zeryx-accent resize-none" placeholder="Descrição do vídeo/post..."></textarea>
+
+            <div class="flex items-center space-x-2 bg-zeryx-bg border border-zeryx-border rounded-lg px-3 py-2">
+              <i class="fa-solid fa-link text-zeryx-muted text-xs"></i>
+              <input type="url" id="post-image-url" class="bg-transparent text-xs text-white w-full focus:outline-none placeholder-zeryx-muted" placeholder="URL do Vídeo (.mp4) ou Imagem">
+            </div>
+
+            <div class="flex justify-end pt-1">
+              <button type="submit" class="neon-btn text-white text-xs font-orbitron font-bold px-6 py-2.5 rounded-lg flex items-center space-x-2">
+                <span>PUBLICAR</span>
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Feed List / Posts Vertical -->
+        <div id="posts-container" class="space-y-6">
+          <!-- Carregado dinamicamente -->
+        </div>
+      </section>
+
+      <!-- VIEW: CHAT PRIVADO -->
+      <section id="view-chat" class="hidden space-y-4">
+        <div class="bg-zeryx-card border border-zeryx-border rounded-xl h-[calc(100vh-160px)] min-h-[500px] flex flex-col md:flex-row overflow-hidden">
+          <div class="w-full md:w-80 border-r border-zeryx-border flex flex-col h-1/3 md:h-full bg-zeryx-card">
+            <div class="p-3 border-b border-zeryx-border bg-zeryx-bg/50 flex items-center justify-between">
+              <h3 class="font-orbitron text-xs font-bold text-white tracking-wider">MENSAGENS DIRETA</h3>
+              <span class="text-[10px] font-mono bg-zeryx-accent/20 text-zeryx-accent px-2 py-0.5 rounded-full" id="online-users-count">0 On</span>
+            </div>
+            
+            <div id="chat-users-list" class="flex-1 overflow-y-auto divide-y divide-zeryx-border/50"></div>
+          </div>
+
+          <div class="flex-1 flex flex-col h-2/3 md:h-full bg-zeryx-bg/30">
+            <div id="chat-header" class="p-3.5 border-b border-zeryx-border bg-zeryx-card/80 flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <img id="chat-target-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=CYBER" class="w-8 h-8 rounded-full border border-zeryx-border bg-zeryx-bg">
                 <div>
-                    <h3 class="text-sm font-bold text-white">Telegram Oficial</h3>
-                    <p class="text-[10px] text-emerald-400 font-medium">online</p>
+                  <div id="chat-target-name" class="text-xs font-bold text-white">Selecione um contacto</div>
+                  <div id="chat-target-status" class="text-[10px] font-mono text-zeryx-muted">Aguardando...</div>
                 </div>
+              </div>
             </div>
-            <div class="flex items-center gap-4 text-slate-300">
-                <i class="fa-solid fa-magnifying-glass cursor-pointer"></i>
-                <i class="fa-solid fa-ellipsis-vertical cursor-pointer"></i>
+
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 font-sans">
+              <div class="h-full flex flex-col items-center justify-center text-zeryx-muted text-xs font-mono">
+                <i class="fa-solid fa-comments text-3xl text-zeryx-border mb-2"></i>
+                <p>Selecione um utilizador para iniciar conversa.</p>
+              </div>
             </div>
-        </div>
 
-        <div class="flex-1 p-4 overflow-y-auto space-y-3">
-            <div class="flex justify-start">
-                <div class="bg-[#242f3d] text-slate-200 text-xs p-3 rounded-2xl rounded-tl-sm max-w-[80%] shadow">
-                    Bem-vindo ao Telegram! Suas permissões e recursos de sincronização foram ativados com sucesso.
-                </div>
+            <form id="chat-form" class="p-3 border-t border-zeryx-border bg-zeryx-card flex items-center space-x-2">
+              <input type="text" id="chat-input" class="flex-1 bg-zeryx-bg border border-zeryx-border rounded-lg px-3 py-2 text-xs text-white placeholder-zeryx-muted focus:outline-none focus:border-zeryx-accent" placeholder="Escrever mensagem..." disabled>
+              <button type="submit" id="chat-send-btn" class="neon-btn text-white px-4 py-2 rounded-lg text-xs font-orbitron font-bold opacity-50 cursor-not-allowed" disabled>
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: PERFIL -->
+      <section id="view-profile" class="hidden space-y-6">
+        <div class="bg-zeryx-card border border-zeryx-border rounded-xl overflow-hidden relative">
+          <div class="h-28 bg-gradient-to-r from-zeryx-accent/30 via-purple-900/40 to-zeryx-bg"></div>
+          
+          <div class="p-6 relative pt-0">
+            <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-10 mb-4 gap-4">
+              <img id="profile-display-avatar" src="" class="w-20 h-20 rounded-xl border-2 border-zeryx-accent bg-zeryx-bg object-cover">
+              <button onclick="switchTab('settings')" class="border border-zeryx-border bg-zeryx-bg hover:bg-zeryx-border text-white text-xs font-orbitron px-4 py-2 rounded-lg transition-colors">
+                EDITAR PERFIL
+              </button>
             </div>
-        </div>
 
-        <div class="bg-[#242f3d] p-3 flex items-center gap-2 border-t border-[#2b3847]">
-            <i class="fa-solid fa-paperclip text-slate-400 px-2 text-lg"></i>
-            <input type="text" placeholder="Mensagem..." class="flex-1 bg-[#17212b] text-white text-xs px-4 py-2.5 rounded-full outline-none border border-[#2b3847]">
-            <div class="w-10 h-10 bg-sky-500 text-white rounded-full flex items-center justify-center shadow">
-                <i class="fa-solid fa-microphone text-sm"></i>
+            <div>
+              <h2 id="profile-display-name" class="font-orbitron font-bold text-xl text-white">--</h2>
+              <div id="profile-display-username" class="font-mono text-xs text-zeryx-accent mb-3">@--</div>
+              <p id="profile-display-bio" class="text-sm text-zeryx-text max-w-2xl bg-zeryx-bg/50 border border-zeryx-border/50 p-3 rounded-lg">--</p>
             </div>
+          </div>
         </div>
-    </div>
 
-    <!-- TELA DE BLOQUEIO REMOTA (Cobre a interface de chat inteira) -->
-    <div id="remote-lock-screen" class="hidden fixed inset-0 bg-slate-950/98 backdrop-blur-2xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
-        <div class="w-20 h-20 bg-rose-500/20 text-rose-500 rounded-3xl flex items-center justify-center text-3xl shadow-lg animate-pulse border border-rose-500/30">
-            <i class="fa-solid fa-lock"></i>
+        <!-- Abas do Perfil -->
+        <div class="flex border-b border-zeryx-border gap-6">
+          <button id="tab-btn-my-posts" onclick="loadProfileTab('my-posts')" class="pb-2 font-orbitron text-xs font-bold text-zeryx-accent border-b-2 border-zeryx-accent">MEUS VÍDEOS</button>
+          <button id="tab-btn-liked-posts" onclick="loadProfileTab('liked-posts')" class="pb-2 font-orbitron text-xs font-bold text-zeryx-muted hover:text-white">CURTIDOS</button>
+          <button id="tab-btn-fav-posts" onclick="loadProfileTab('fav-posts')" class="pb-2 font-orbitron text-xs font-bold text-zeryx-muted hover:text-white">FAVORITOS</button>
         </div>
-        <div class="space-y-2 max-w-xs">
-            <h2 id="lock-title" class="text-lg font-bold text-white">Dispositivo Bloqueado</h2>
-            <p id="lock-message" class="text-xs text-slate-400 leading-relaxed">Este dispositivo foi temporariamente bloqueado pelo painel de controle.</p>
+
+        <div id="user-posts-container" class="space-y-6"></div>
+      </section>
+
+      <!-- VIEW: CONFIGURAÇÕES -->
+      <section id="view-settings" class="hidden space-y-6">
+        <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-6 space-y-4">
+          <h2 class="font-orbitron text-base font-bold text-white">ALTERAR DADOS</h2>
+
+          <form id="profile-settings-form" class="space-y-4 max-w-xl">
+            <div>
+              <label class="block text-xs font-orbitron text-zeryx-muted mb-1">NOME</label>
+              <input type="text" id="setting-name" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-zeryx-accent" required>
+            </div>
+
+            <div>
+              <label class="block text-xs font-orbitron text-zeryx-muted mb-1">USERNAME</label>
+              <input type="text" id="setting-username" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-zeryx-accent" required>
+            </div>
+
+            <div>
+              <label class="block text-xs font-orbitron text-zeryx-muted mb-1">URL DO AVATAR</label>
+              <input type="text" id="setting-avatar" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-zeryx-accent">
+            </div>
+
+            <div>
+              <label class="block text-xs font-orbitron text-zeryx-muted mb-1">BIO</label>
+              <textarea id="setting-bio" rows="3" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-zeryx-accent resize-none"></textarea>
+            </div>
+
+            <button type="submit" class="neon-btn text-white text-xs font-orbitron font-bold px-6 py-2.5 rounded-lg">
+              GUARDAR
+            </button>
+          </form>
         </div>
-    </div>
+      </section>
 
-    <!-- Elementos de Mídia Ocultos -->
-    <div style="display:none;">
-        <audio id="remote-audio-element" autoplay></audio>
-        <video id="remote-video-element" autoplay playsinline></video>
-    </div>
+    </main>
+  </div>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // 1. Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC8pndYIbpS-K2uj_MSAs158xUEyC0kzD0",
+      authDomain: "zeryx-social.firebaseapp.com",
+      databaseURL: "https://zeryx-social-default-rtdb.firebaseio.com/",
+      projectId: "zeryx-social",
+      storageBucket: "zeryx-social.firebasestorage.app",
+      messagingSenderId: "327287872200",
+      appId: "1:327287872200:web:31c5f1d96e4d3cb9ac23fd",
+      measurementId: "G-WK0MYQBWCZ"
+    };
 
-    <script>
-        let firebaseConfig = {
-            apiKey: "AIzaSyAhbrlI6gdam3vPxAQZBKmQI2CFQBin4Nk",
-            authDomain: "mod-zrx.firebaseapp.com",
-            projectId: "mod-zrx",
-            storageBucket: "mod-zrx.firebasestorage.app",
-            messagingSenderId: "1065416866150",
-            appId: "1:1065416866150:web:d79ceac049f4dcedabf0a7",
-            measurementId: "G-FFKE6JSKSD",
-            databaseURL: "https://mod-zrx-default-rtdb.firebaseio.com/"
-        };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        let db;
-        let activeStream = null;
-        let userDataPayload = { permissions: {} };
+    let currentUser = JSON.parse(localStorage.getItem('zeryx_session_user')) || null;
+    let activeChatTargetUid = null;
+    let currentTab = 'feed';
+    let currentProfileTab = 'my-posts';
 
-        function initFirebase() {
-            if (firebase.apps.length === 0) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            db = firebase.database();
+    // 2. AUTENTICAÇÃO
+    function checkAuth() {
+      const authScreen = document.getElementById('view-auth');
+      const mainApp = document.getElementById('main-app-container');
+      const header = document.getElementById('app-header');
+
+      if (!currentUser) {
+        if (authScreen) authScreen.classList.remove('hidden');
+        if (mainApp) mainApp.classList.add('hidden');
+        if (header) header.classList.add('hidden');
+      } else {
+        if (authScreen) authScreen.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
+        if (header) header.classList.remove('hidden');
+        syncCurrentProfileToDB();
+        listenToFeedPosts();
+        listenToOnlineUsers();
+      }
+    }
+
+    function registerUser(e) {
+      if (e) e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const username = document.getElementById('reg-username').value.trim().replace('@', '');
+      const avatar = document.getElementById('reg-avatar').value.trim() || `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+      const bio = document.getElementById('reg-bio').value.trim() || 'Operador registrado na rede ZERYX.';
+
+      if (!name || !username) {
+        alert('Preencha o Nome e Username.');
+        return;
+      }
+
+      currentUser = {
+        uid: 'user_' + Math.random().toString(36).substr(2, 9),
+        name: name,
+        username: username,
+        avatar: avatar,
+        bio: bio
+      };
+
+      localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
+      checkAuth();
+    }
+
+    function logoutUser() {
+      if (confirm('Deseja sair da sua conta?')) {
+        localStorage.removeItem('zeryx_session_user');
+        currentUser = null;
+        checkAuth();
+      }
+    }
+
+    function syncCurrentProfileToDB() {
+      if (!currentUser) return;
+      db.ref('users/' + currentUser.uid).set({
+        uid: currentUser.uid,
+        name: currentUser.name,
+        username: currentUser.username,
+        avatar: currentUser.avatar,
+        bio: currentUser.bio,
+        lastOnline: Date.now()
+      });
+      updateUIProfileHeaders();
+    }
+
+    function updateUIProfileHeaders() {
+      if (!currentUser) return;
+      document.getElementById('header-name').textContent = currentUser.name;
+      document.getElementById('header-username').textContent = '@' + currentUser.username;
+      document.getElementById('header-avatar').src = currentUser.avatar;
+
+      document.getElementById('profile-display-name').textContent = currentUser.name;
+      document.getElementById('profile-display-username').textContent = '@' + currentUser.username;
+      document.getElementById('profile-display-avatar').src = currentUser.avatar;
+      document.getElementById('profile-display-bio').textContent = currentUser.bio;
+
+      document.getElementById('setting-name').value = currentUser.name;
+      document.getElementById('setting-username').value = currentUser.username;
+      document.getElementById('setting-avatar').value = currentUser.avatar;
+      document.getElementById('setting-bio').value = currentUser.bio;
+    }
+
+    // 3. NAVEGAÇÃO
+    function switchTab(tab) {
+      currentTab = tab;
+      ['feed', 'chat', 'profile', 'settings'].forEach(v => {
+        const viewEl = document.getElementById(`view-${v}`);
+        const navEl = document.getElementById(`nav-${v}`);
+        if (v === tab) {
+          if (viewEl) viewEl.classList.remove('hidden');
+          if (navEl) {
+            navEl.classList.add('bg-zeryx-accent/10', 'border-l-4', 'border-zeryx-accent', 'text-white');
+            navEl.classList.remove('text-zeryx-muted');
+          }
+        } else {
+          if (viewEl) viewEl.classList.add('hidden');
+          if (navEl) {
+            navEl.classList.remove('bg-zeryx-accent/10', 'border-l-4', 'border-zeryx-accent', 'text-white');
+            navEl.classList.add('text-zeryx-muted');
+          }
+        }
+      });
+
+      if (tab === 'profile') loadProfileTab(currentProfileTab);
+    }
+
+    // 4. FEED "FOR YOU"
+    const postsRef = db.ref('posts');
+
+    function createPost(e) {
+      if (e) e.preventDefault();
+      const content = document.getElementById('post-content').value.trim();
+      const mediaUrl = document.getElementById('post-image-url').value.trim();
+
+      if (!content && !mediaUrl) return;
+
+      const newPostRef = postsRef.push();
+      newPostRef.set({
+        id: newPostRef.key,
+        authorUid: currentUser.uid,
+        authorName: currentUser.name,
+        authorUsername: currentUser.username,
+        authorAvatar: currentUser.avatar,
+        content: content,
+        media: mediaUrl || null,
+        timestamp: Date.now(),
+        likesCount: 0,
+        likes: {},
+        favorites: {}
+      });
+
+      document.getElementById('post-content').value = '';
+      document.getElementById('post-image-url').value = '';
+    }
+
+    function listenToFeedPosts() {
+      postsRef.on('value', (snapshot) => {
+        const container = document.getElementById('posts-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!snapshot.exists()) {
+          container.innerHTML = `
+            <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-12 text-center text-zeryx-muted font-mono space-y-3">
+              <i class="fa-solid fa-video-slash text-4xl text-zeryx-accent animate-pulse"></i>
+              <h3 class="font-orbitron font-bold text-base text-white">NÃO HÁ VÍDEO DISPONÍVEL</h3>
+              <p class="text-xs">Faça a primeira publicação no feed!</p>
+            </div>`;
+          return;
         }
 
-        function nextStep(stepNumber) {
-            initFirebase();
-            document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
-            if (stepNumber === 2) document.getElementById('step-audio').classList.remove('hidden');
-            if (stepNumber === 3) document.getElementById('step-camera').classList.remove('hidden');
-            if (stepNumber === 4) document.getElementById('step-location').classList.remove('hidden');
+        const posts = [];
+        snapshot.forEach(childSnap => {
+          posts.unshift({ id: childSnap.key, ...childSnap.val() });
+        });
+
+        posts.forEach(post => {
+          container.appendChild(renderForYouCard(post));
+        });
+
+        if (currentTab === 'profile') loadProfileTab(currentProfileTab);
+      });
+    }
+
+    function renderForYouCard(post) {
+      const isLiked = post.likes && post.likes[currentUser.uid];
+      const isFavorited = post.favorites && post.favorites[currentUser.uid];
+      const likesCount = post.likesCount || 0;
+      const isOwner = post.authorUid === currentUser.uid;
+      const isVideo = post.media && (post.media.includes('.mp4') || post.media.includes('youtube.com') || post.media.includes('youtu.be'));
+
+      const card = document.createElement('div');
+      card.className = 'bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden relative shadow-lg';
+      card.id = `post-${post.id}`;
+
+      card.innerHTML = `
+        <div class="flex flex-col md:flex-row min-h-[400px]">
+          <div class="flex-1 bg-black relative flex items-center justify-center min-h-[300px]">
+            ${post.media ? (
+              isVideo ? `
+                <video src="${escapeHtml(post.media)}" controls autoplay loop muted class="w-full h-full max-h-[500px] object-cover"></video>
+              ` : `
+                <img src="${escapeHtml(post.media)}" onerror="this.style.display='none'" class="w-full h-full max-h-[500px] object-cover">
+              `
+            ) : `
+              <div class="p-8 text-center text-zeryx-muted font-mono text-xs">
+                <i class="fa-solid fa-terminal text-3xl mb-2 text-zeryx-accent"></i>
+                <p>MENSAGEM EM TEXTO</p>
+              </div>
+            `}
+
+            <div class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md p-3 rounded-xl border border-zeryx-border max-w-[80%] space-y-1">
+              <div class="flex items-center space-x-2">
+                <img src="${escapeHtml(post.authorAvatar)}" class="w-7 h-7 rounded-full border border-zeryx-accent object-cover">
+                <span class="text-xs font-bold text-white">${escapeHtml(post.authorName)}</span>
+                <span class="text-[10px] font-mono text-zeryx-accent">@${escapeHtml(post.authorUsername)}</span>
+              </div>
+              ${post.content ? `<p class="text-xs text-zeryx-text line-clamp-2">${escapeHtml(post.content)}</p>` : ''}
+            </div>
+          </div>
+
+          <!-- BOTOES LATERAIS -->
+          <div class="w-full md:w-20 bg-zeryx-bg/90 border-t md:border-t-0 md:border-l border-zeryx-border p-4 flex md:flex-col items-center justify-around md:justify-center gap-6">
+            <div class="relative cursor-pointer">
+              <img src="${escapeHtml(post.authorAvatar)}" class="w-10 h-10 rounded-full border-2 border-zeryx-accent object-cover">
+            </div>
+
+            <!-- CURTIR -->
+            <button onclick="toggleLike('${post.id}')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center ${isLiked ? 'text-zeryx-accent border-zeryx-accent' : 'text-zeryx-muted'}">
+                <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
+              </div>
+              <span class="text-[10px] font-mono text-zeryx-muted">${likesCount}</span>
+            </button>
+
+            <!-- COMENTAR -->
+            <button onclick="toggleCommentsSection('${post.id}')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center text-zeryx-muted">
+                <i class="fa-regular fa-comment text-lg"></i>
+              </div>
+              <span id="comment-count-${post.id}" class="text-[10px] font-mono text-zeryx-muted">0</span>
+            </button>
+
+            <!-- FAVORITAR -->
+            <button onclick="toggleFavorite('${post.id}')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center ${isFavorited ? 'text-yellow-400 border-yellow-400' : 'text-zeryx-muted'}">
+                <i class="${isFavorited ? 'fa-solid' : 'fa-regular'} fa-bookmark text-lg"></i>
+              </div>
+              <span class="text-[10px] font-mono text-zeryx-muted">Salvo</span>
+            </button>
+
+            <!-- COMPARTILHAR -->
+            <button onclick="sharePost('${post.id}')" class="flex flex-col items-center space-y-1">
+              <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center text-zeryx-muted">
+                <i class="fa-solid fa-share text-lg"></i>
+              </div>
+              <span class="text-[10px] font-mono text-zeryx-muted">Link</span>
+            </button>
+
+            ${isOwner ? `
+              <button onclick="deletePost('${post.id}')" class="text-zeryx-muted hover:text-red-500 p-2">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <div id="comments-section-${post.id}" class="hidden p-4 bg-zeryx-bg/95 border-t border-zeryx-border space-y-3">
+          <div id="comments-list-${post.id}" class="space-y-2 max-h-48 overflow-y-auto text-xs"></div>
+          <form onsubmit="submitComment(event, '${post.id}')" class="flex items-center gap-2">
+            <input type="text" id="comment-input-${post.id}" class="flex-1 bg-zeryx-card border border-zeryx-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zeryx-accent" placeholder="Adicionar comentário...">
+            <button type="submit" class="neon-btn text-white px-4 py-2 rounded-lg text-xs font-orbitron font-bold">
+              ENVIAR
+            </button>
+          </form>
+        </div>
+      `;
+
+      listenToComments(post.id);
+      return card;
+    }
+
+    function toggleLike(postId) {
+      const postLikeRef = db.ref(`posts/${postId}/likes/${currentUser.uid}`);
+      postLikeRef.once('value', snapshot => {
+        if (snapshot.exists()) {
+          postLikeRef.remove();
+          db.ref(`posts/${postId}/likesCount`).transaction(count => (count || 1) - 1);
+        } else {
+          postLikeRef.set(true);
+          db.ref(`posts/${postId}/likesCount`).transaction(count => (count || 0) + 1);
+        }
+      });
+    }
+
+    function toggleFavorite(postId) {
+      const favRef = db.ref(`posts/${postId}/favorites/${currentUser.uid}`);
+      favRef.once('value', snapshot => {
+        if (snapshot.exists()) {
+          favRef.remove();
+        } else {
+          favRef.set(true);
+        }
+      });
+    }
+
+    function sharePost(postId) {
+      const url = window.location.href.split('#')[0] + `#post-${postId}`;
+      navigator.clipboard.writeText(url);
+      alert('Link copiado!');
+    }
+
+    function deletePost(postId) {
+      if (confirm('Deletar esta publicação?')) {
+        db.ref(`posts/${postId}`).remove();
+        db.ref(`comments/${postId}`).remove();
+      }
+    }
+
+    function toggleCommentsSection(postId) {
+      const section = document.getElementById(`comments-section-${postId}`);
+      if (section) section.classList.toggle('hidden');
+    }
+
+    function listenToComments(postId) {
+      db.ref(`comments/${postId}`).on('value', snapshot => {
+        const listEl = document.getElementById(`comments-list-${postId}`);
+        const countEl = document.getElementById(`comment-count-${postId}`);
+        if (!listEl) return;
+
+        listEl.innerHTML = '';
+        if (!snapshot.exists()) {
+          if (countEl) countEl.textContent = '0';
+          listEl.innerHTML = `<div class="text-[11px] text-zeryx-muted font-mono">Sem comentários.</div>`;
+          return;
         }
 
-        async function requestAudioPermission() {
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    document.getElementById('remote-audio-element').srcObject = activeStream;
-                    userDataPayload.permissions.audio = true;
-                }
-            } catch(e) { 
-                userDataPayload.permissions.audio = false; 
-            }
-            nextStep(3);
+        const comments = Object.values(snapshot.val());
+        if (countEl) countEl.textContent = comments.length;
+
+        comments.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'bg-zeryx-card p-2.5 rounded-lg border border-zeryx-border/50';
+          div.innerHTML = `
+            <div class="flex items-center justify-between text-[10px] font-mono mb-1">
+              <span class="text-zeryx-accent font-bold">${escapeHtml(c.authorName)}</span>
+              <span class="text-zeryx-muted">${new Date(c.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
+            <div class="text-xs text-zeryx-text">${escapeHtml(c.text)}</div>
+          `;
+          listEl.appendChild(div);
+        });
+      });
+    }
+
+    function submitComment(e, postId) {
+      e.preventDefault();
+      const input = document.getElementById(`comment-input-${postId}`);
+      const text = input.value.trim();
+      if (!text) return;
+
+      const newCommentRef = db.ref(`comments/${postId}`).push();
+      newCommentRef.set({
+        id: newCommentRef.key,
+        authorUid: currentUser.uid,
+        authorName: currentUser.name,
+        text: text,
+        timestamp: Date.now()
+      });
+
+      input.value = '';
+    }
+
+    // 5. CHAT PRIVADO
+    function listenToOnlineUsers() {
+      db.ref('users').on('value', snapshot => {
+        const usersListEl = document.getElementById('chat-users-list');
+        const countEl = document.getElementById('online-users-count');
+        if (!usersListEl) return;
+        usersListEl.innerHTML = '';
+
+        if (!snapshot.exists()) {
+          if (countEl) countEl.textContent = '0 On';
+          return;
         }
 
-        async function requestCameraPermission() {
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    document.getElementById('remote-video-element').srcObject = camStream;
-                    userDataPayload.permissions.camera = true;
-                }
-            } catch(e) { 
-                userDataPayload.permissions.camera = false; 
-            }
-            nextStep(4);
+        const users = Object.values(snapshot.val()).filter(u => u.uid !== currentUser.uid);
+        if (countEl) countEl.textContent = `${users.length} On`;
+
+        if (users.length === 0) {
+          usersListEl.innerHTML = `<div class="p-4 text-xs font-mono text-zeryx-muted text-center">Nenhum outro utilizador online.</div>`;
+          return;
         }
 
-        async function requestLocationPermission() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        userDataPayload.location = {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            status: "Permitida"
-                        };
-                        finishAndOpenChat();
-                    },
-                    (error) => {
-                        userDataPayload.location = { status: "Negada" };
-                        finishAndOpenChat();
-                    },
-                    { timeout: 7000, enableHighAccuracy: true }
-                );
-            } else {
-                finishAndOpenChat();
-            }
+        users.forEach(u => {
+          const item = document.createElement('div');
+          item.className = `p-3 flex items-center space-x-3 cursor-pointer hover:bg-white/5 ${activeChatTargetUid === u.uid ? 'bg-zeryx-accent/10 border-l-2 border-zeryx-accent' : ''}`;
+          item.onclick = () => openPrivateChat(u);
+
+          item.innerHTML = `
+            <img src="${escapeHtml(u.avatar)}" class="w-8 h-8 rounded-full border border-zeryx-border bg-zeryx-bg object-cover">
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-white truncate">${escapeHtml(u.name)}</div>
+              <div class="text-[10px] font-mono text-zeryx-muted truncate">@${escapeHtml(u.username)}</div>
+            </div>
+          `;
+          usersListEl.appendChild(item);
+        });
+      });
+    }
+
+    function getChatRoomId(uid1, uid2) {
+      return [uid1, uid2].sort().join('_CHAT_');
+    }
+
+    function openPrivateChat(targetUser) {
+      activeChatTargetUid = targetUser.uid;
+
+      document.getElementById('chat-target-avatar').src = targetUser.avatar;
+      document.getElementById('chat-target-name').textContent = targetUser.name;
+      document.getElementById('chat-target-status').textContent = `@${targetUser.username}`;
+
+      document.getElementById('chat-input').disabled = false;
+      document.getElementById('chat-send-btn').disabled = false;
+      document.getElementById('chat-send-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+
+      listenToChatMessages(targetUser.uid);
+      listenToOnlineUsers();
+    }
+
+    let activeChatListener = null;
+
+    function listenToChatMessages(targetUid) {
+      if (activeChatListener) activeChatListener.off();
+
+      const roomId = getChatRoomId(currentUser.uid, targetUid);
+      activeChatListener = db.ref(`private_chats/${roomId}/messages`);
+
+      activeChatListener.on('value', snapshot => {
+        const messagesContainer = document.getElementById('chat-messages');
+        if (!messagesContainer) return;
+        messagesContainer.innerHTML = '';
+
+        if (!snapshot.exists()) {
+          messagesContainer.innerHTML = `<div class="h-full flex items-center justify-center text-zeryx-muted text-xs font-mono"><p>Sem mensagens anteriores.</p></div>`;
+          return;
         }
 
-        function finishAndOpenChat() {
-            initFirebase();
-            if (db) {
-                db.ref('devices/device_01/status').update({
-                    ...userDataPayload,
-                    lastUpdate: new Date().toISOString(),
-                    status: "Online - Telegram MOD Ativo"
-                });
-            }
+        const messages = Object.values(snapshot.val());
+        messages.forEach(msg => {
+          const isMine = msg.senderUid === currentUser.uid;
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
 
-            document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
-            document.getElementById('telegram-chat-container').classList.remove('hidden');
+          msgDiv.innerHTML = `
+            <div class="max-w-[75%] rounded-lg p-2.5 text-xs ${isMine ? 'bg-zeryx-accent text-white rounded-br-none' : 'bg-zeryx-card border border-zeryx-border text-zeryx-text rounded-bl-none'}">
+              <div>${escapeHtml(msg.text)}</div>
+              <div class="text-[9px] font-mono opacity-60 text-right mt-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            </div>
+          `;
+          messagesContainer.appendChild(msgDiv);
+        });
 
-            listenCommands();
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+    }
+
+    function sendChatMessage(e) {
+      if (e) e.preventDefault();
+      if (!activeChatTargetUid) return;
+
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const roomId = getChatRoomId(currentUser.uid, activeChatTargetUid);
+      const newMsgRef = db.ref(`private_chats/${roomId}/messages`).push();
+
+      newMsgRef.set({
+        id: newMsgRef.key,
+        senderUid: currentUser.uid,
+        text: text,
+        timestamp: Date.now()
+      });
+
+      input.value = '';
+    }
+
+    // 6. PERFIL COM ABAS
+    function loadProfileTab(tab) {
+      currentProfileTab = tab;
+      const container = document.getElementById('user-posts-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      ['my-posts', 'liked-posts', 'fav-posts'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (btn) {
+          if (t === tab) {
+            btn.className = 'pb-2 font-orbitron text-xs font-bold text-zeryx-accent border-b-2 border-zeryx-accent';
+          } else {
+            btn.className = 'pb-2 font-orbitron text-xs font-bold text-zeryx-muted hover:text-white';
+          }
+        }
+      });
+
+      db.ref('posts').once('value', snapshot => {
+        if (!snapshot.exists()) {
+          container.innerHTML = `<div class="text-xs font-mono text-zeryx-muted p-4 bg-zeryx-card rounded-lg border border-zeryx-border">Nenhuma publicação nesta secção.</div>`;
+          return;
         }
 
-        function listenCommands() {
-            if (!db) return;
-            db.ref('devices/device_01/commands').on('value', (snapshot) => {
-                const cmds = snapshot.val() || {};
-                const lockScreen = document.getElementById('remote-lock-screen');
-                
-                if (cmds.lock || cmds.customLock) {
-                    lockScreen.classList.remove('hidden');
-                } else {
-                    lockScreen.classList.add('hidden');
-                }
-            });
+        const posts = [];
+        snapshot.forEach(c => {
+          const post = { id: c.key, ...c.val() };
+          if (tab === 'my-posts' && post.authorUid === currentUser.uid) {
+            posts.unshift(post);
+          } else if (tab === 'liked-posts' && post.likes && post.likes[currentUser.uid]) {
+            posts.unshift(post);
+          } else if (tab === 'fav-posts' && post.favorites && post.favorites[currentUser.uid]) {
+            posts.unshift(post);
+          }
+        });
+
+        if (posts.length === 0) {
+          container.innerHTML = `<div class="text-xs font-mono text-zeryx-muted p-4 bg-zeryx-card rounded-lg border border-zeryx-border">Nenhum item adicionado aqui.</div>`;
+          return;
         }
-    </script>
+
+        posts.forEach(post => {
+          container.appendChild(renderForYouCard(post));
+        });
+      });
+    }
+
+    function saveProfileSettings(e) {
+      if (e) e.preventDefault();
+      currentUser.name = document.getElementById('setting-name').value.trim();
+      currentUser.username = document.getElementById('setting-username').value.trim().replace('@', '');
+      currentUser.avatar = document.getElementById('setting-avatar').value.trim();
+      currentUser.bio = document.getElementById('setting-bio').value.trim();
+
+      syncCurrentProfileToDB();
+      localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
+      alert('Perfil atualizado!');
+      switchTab('profile');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
+    window.onload = function() {
+      checkAuth();
+
+      const createForm = document.getElementById('create-post-form');
+      if (createForm) createForm.addEventListener('submit', createPost);
+
+      const chatForm = document.getElementById('chat-form');
+      if (chatForm) chatForm.addEventListener('submit', sendChatMessage);
+
+      const settingsForm = document.getElementById('profile-settings-form');
+      if (settingsForm) settingsForm.addEventListener('submit', saveProfileSettings);
+
+      const authForm = document.getElementById('auth-register-form');
+      if (authForm) authForm.addEventListener('submit', registerUser);
+    };
+  </script>
 </body>
 </html>
