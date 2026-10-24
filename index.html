@@ -42,7 +42,7 @@
     }
   </script>
 
-  <!-- Custom Cyberpunk Styles -->
+  <!-- Estilos Customizados Cyberpunk -->
   <style>
     body {
       background-color: #090a0f;
@@ -107,7 +107,7 @@
         <h1 class="font-orbitron font-black text-3xl tracking-wider text-white neon-text">
           ZERYX<span class="text-zeryx-accent">.IO</span>
         </h1>
-        <p class="text-xs font-mono text-zeryx-muted uppercase tracking-widest">REGISTO DE PROTOCOLO DA MATRIZ</p>
+        <p class="text-xs font-mono text-zeryx-muted uppercase tracking-widest">REGISTRO DE PROTOCOLO DA MATRIZ</p>
       </div>
 
       <form id="auth-register-form" class="space-y-4">
@@ -122,8 +122,8 @@
         </div>
 
         <div>
-          <label class="block text-xs font-orbitron text-zeryx-muted mb-1">URL DO AVATAR (OPCIONAL)</label>
-          <input type="url" id="reg-avatar" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-zeryx-accent" placeholder="https://...">
+          <label class="block text-xs font-orbitron text-zeryx-muted mb-1">FOTO DE PERFIL (GALERIA)</label>
+          <input type="file" id="reg-avatar-file" accept="image/*" class="w-full text-xs text-zeryx-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-orbitron file:bg-zeryx-accent/20 file:text-zeryx-accent hover:file:bg-zeryx-accent hover:file:text-white transition-all cursor-pointer">
         </div>
 
         <div>
@@ -205,19 +205,20 @@
         <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-4 md:p-5 relative overflow-hidden">
           <div class="absolute top-0 left-0 w-1 h-full bg-zeryx-accent"></div>
           <h2 class="font-orbitron text-sm font-bold tracking-wider text-zeryx-accent mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-plus text-xs"></i> NOVA TRANSMISSÃO / VÍDEO
+            <i class="fa-solid fa-plus text-xs"></i> NOVA TRANSMISSÃO / VÍDEO / FOTO
           </h2>
           
           <form id="create-post-form" class="space-y-3">
-            <textarea id="post-content" rows="2" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white placeholder-zeryx-muted focus:outline-none focus:border-zeryx-accent resize-none" placeholder="Descrição do vídeo/post..."></textarea>
+            <textarea id="post-content" rows="2" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-3 text-sm text-white placeholder-zeryx-muted focus:outline-none focus:border-zeryx-accent resize-none" placeholder="Descrição da transmissão..."></textarea>
 
-            <div class="flex items-center space-x-2 bg-zeryx-bg border border-zeryx-border rounded-lg px-3 py-2">
-              <i class="fa-solid fa-link text-zeryx-muted text-xs"></i>
-              <input type="url" id="post-image-url" class="bg-transparent text-xs text-white w-full focus:outline-none placeholder-zeryx-muted" placeholder="URL do Vídeo (.mp4) ou Imagem">
+            <!-- SELEÇÃO DA GALERIA -->
+            <div class="space-y-1">
+              <label class="block text-[10px] font-orbitron text-zeryx-muted">SELECIONE VÍDEO OU FOTO DA GALERIA</label>
+              <input type="file" id="post-file-input" accept="video/*,image/*" class="w-full text-xs text-zeryx-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-orbitron file:bg-zeryx-accent/20 file:text-zeryx-accent hover:file:bg-zeryx-accent hover:file:text-white transition-all cursor-pointer">
             </div>
 
             <div class="flex justify-end pt-1">
-              <button type="submit" class="neon-btn text-white text-xs font-orbitron font-bold px-6 py-2.5 rounded-lg flex items-center space-x-2">
+              <button type="submit" id="btn-submit-post" class="neon-btn text-white text-xs font-orbitron font-bold px-6 py-2.5 rounded-lg flex items-center space-x-2">
                 <span>PUBLICAR</span>
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
@@ -248,7 +249,7 @@
               <div class="flex items-center space-x-3">
                 <img id="chat-target-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=CYBER" class="w-8 h-8 rounded-full border border-zeryx-border bg-zeryx-bg">
                 <div>
-                  <div id="chat-target-name" class="text-xs font-bold text-white">Selecione um contacto</div>
+                  <div id="chat-target-name" class="text-xs font-bold text-white">Selecione um contato</div>
                   <div id="chat-target-status" class="text-[10px] font-mono text-zeryx-muted">Aguardando...</div>
                 </div>
               </div>
@@ -257,7 +258,7 @@
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 font-sans">
               <div class="h-full flex flex-col items-center justify-center text-zeryx-muted text-xs font-mono">
                 <i class="fa-solid fa-comments text-3xl text-zeryx-border mb-2"></i>
-                <p>Selecione um utilizador para iniciar conversa.</p>
+                <p>Selecione um usuário para iniciar conversa.</p>
               </div>
             </div>
 
@@ -305,7 +306,7 @@
       <!-- VIEW: CONFIGURAÇÕES -->
       <section id="view-settings" class="hidden space-y-6">
         <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-6 space-y-4">
-          <h2 class="font-orbitron text-base font-bold text-white">ALTERAR DADOS</h2>
+          <h2 class="font-orbitron text-base font-bold text-white">ALTERAR DADOS DO PERFIL</h2>
 
           <form id="profile-settings-form" class="space-y-4 max-w-xl">
             <div>
@@ -319,8 +320,8 @@
             </div>
 
             <div>
-              <label class="block text-xs font-orbitron text-zeryx-muted mb-1">URL DO AVATAR</label>
-              <input type="text" id="setting-avatar" class="w-full bg-zeryx-bg border border-zeryx-border rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-zeryx-accent">
+              <label class="block text-xs font-orbitron text-zeryx-muted mb-1">ALTERAR FOTO DE PERFIL (GALERIA)</label>
+              <input type="file" id="setting-avatar-file" accept="image/*" class="w-full text-xs text-zeryx-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-orbitron file:bg-zeryx-accent/20 file:text-zeryx-accent hover:file:bg-zeryx-accent hover:file:text-white transition-all cursor-pointer">
             </div>
 
             <div>
@@ -329,7 +330,7 @@
             </div>
 
             <button type="submit" class="neon-btn text-white text-xs font-orbitron font-bold px-6 py-2.5 rounded-lg">
-              GUARDAR
+              SALVAR ALTERAÇÕES
             </button>
           </form>
         </div>
@@ -360,6 +361,17 @@
     let currentTab = 'feed';
     let currentProfileTab = 'my-posts';
 
+    // Helper para converter arquivo em DataURL (Base64)
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
     // 2. AUTENTICAÇÃO
     function checkAuth() {
       const authScreen = document.getElementById('view-auth');
@@ -380,11 +392,11 @@
       }
     }
 
-    function registerUser(e) {
+    async function registerUser(e) {
       if (e) e.preventDefault();
       const name = document.getElementById('reg-name').value.trim();
       const username = document.getElementById('reg-username').value.trim().replace('@', '');
-      const avatar = document.getElementById('reg-avatar').value.trim() || `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+      const avatarFile = document.getElementById('reg-avatar-file').files[0];
       const bio = document.getElementById('reg-bio').value.trim() || 'Operador registrado na rede ZERYX.';
 
       if (!name || !username) {
@@ -392,11 +404,16 @@
         return;
       }
 
+      let avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+      if (avatarFile) {
+        avatarUrl = await fileToDataURL(avatarFile);
+      }
+
       currentUser = {
         uid: 'user_' + Math.random().toString(36).substr(2, 9),
         name: name,
         username: username,
-        avatar: avatar,
+        avatar: avatarUrl,
         bio: bio
       };
 
@@ -438,7 +455,6 @@
 
       document.getElementById('setting-name').value = currentUser.name;
       document.getElementById('setting-username').value = currentUser.username;
-      document.getElementById('setting-avatar').value = currentUser.avatar;
       document.getElementById('setting-bio').value = currentUser.bio;
     }
 
@@ -466,15 +482,31 @@
       if (tab === 'profile') loadProfileTab(currentProfileTab);
     }
 
-    // 4. FEED "FOR YOU"
+    // 4. FEED "FOR YOU" (ENVIO DE MÍDIA DA GALERIA)
     const postsRef = db.ref('posts');
 
-    function createPost(e) {
+    async function createPost(e) {
       if (e) e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
-      const mediaUrl = document.getElementById('post-image-url').value.trim();
+      const fileInput = document.getElementById('post-file-input');
+      const mediaFile = fileInput.files[0];
 
-      if (!content && !mediaUrl) return;
+      if (!content && !mediaFile) {
+        alert('Adicione um texto ou selecione um arquivo da galeria.');
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btn-submit-post');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = `<span>PROCESSANDO...</span>`;
+
+      let mediaData = null;
+      let isVideoType = false;
+
+      if (mediaFile) {
+        isVideoType = mediaFile.type.startsWith('video');
+        mediaData = await fileToDataURL(mediaFile);
+      }
 
       const newPostRef = postsRef.push();
       newPostRef.set({
@@ -484,7 +516,8 @@
         authorUsername: currentUser.username,
         authorAvatar: currentUser.avatar,
         content: content,
-        media: mediaUrl || null,
+        media: mediaData || null,
+        isVideo: isVideoType,
         timestamp: Date.now(),
         likesCount: 0,
         likes: {},
@@ -492,7 +525,9 @@
       });
 
       document.getElementById('post-content').value = '';
-      document.getElementById('post-image-url').value = '';
+      fileInput.value = '';
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
     }
 
     function listenToFeedPosts() {
@@ -506,7 +541,7 @@
             <div class="bg-zeryx-card border border-zeryx-border rounded-xl p-12 text-center text-zeryx-muted font-mono space-y-3">
               <i class="fa-solid fa-video-slash text-4xl text-zeryx-accent animate-pulse"></i>
               <h3 class="font-orbitron font-bold text-base text-white">NÃO HÁ VÍDEO DISPONÍVEL</h3>
-              <p class="text-xs">Faça a primeira publicação no feed!</p>
+              <p class="text-xs">Faça a primeira publicação com foto ou vídeo da galeria!</p>
             </div>`;
           return;
         }
@@ -529,7 +564,6 @@
       const isFavorited = post.favorites && post.favorites[currentUser.uid];
       const likesCount = post.likesCount || 0;
       const isOwner = post.authorUid === currentUser.uid;
-      const isVideo = post.media && (post.media.includes('.mp4') || post.media.includes('youtube.com') || post.media.includes('youtu.be'));
 
       const card = document.createElement('div');
       card.className = 'bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden relative shadow-lg';
@@ -539,15 +573,15 @@
         <div class="flex flex-col md:flex-row min-h-[400px]">
           <div class="flex-1 bg-black relative flex items-center justify-center min-h-[300px]">
             ${post.media ? (
-              isVideo ? `
-                <video src="${escapeHtml(post.media)}" controls autoplay loop muted class="w-full h-full max-h-[500px] object-cover"></video>
+              post.isVideo ? `
+                <video src="${post.media}" controls autoplay loop muted class="w-full h-full max-h-[500px] object-cover"></video>
               ` : `
-                <img src="${escapeHtml(post.media)}" onerror="this.style.display='none'" class="w-full h-full max-h-[500px] object-cover">
+                <img src="${post.media}" class="w-full h-full max-h-[500px] object-cover">
               `
             ) : `
               <div class="p-8 text-center text-zeryx-muted font-mono text-xs">
                 <i class="fa-solid fa-terminal text-3xl mb-2 text-zeryx-accent"></i>
-                <p>MENSAGEM EM TEXTO</p>
+                <p>TRANSMISSÃO EM TEXTO</p>
               </div>
             `}
 
@@ -848,7 +882,7 @@
 
       db.ref('posts').once('value', snapshot => {
         if (!snapshot.exists()) {
-          container.innerHTML = `<div class="text-xs font-mono text-zeryx-muted p-4 bg-zeryx-card rounded-lg border border-zeryx-border">Nenhuma publicação nesta secção.</div>`;
+          container.innerHTML = `<div class="text-xs font-mono text-zeryx-muted p-4 bg-zeryx-card rounded-lg border border-zeryx-border">Nenhuma publicação nesta seção.</div>`;
           return;
         }
 
@@ -875,16 +909,20 @@
       });
     }
 
-    function saveProfileSettings(e) {
+    async function saveProfileSettings(e) {
       if (e) e.preventDefault();
       currentUser.name = document.getElementById('setting-name').value.trim();
       currentUser.username = document.getElementById('setting-username').value.trim().replace('@', '');
-      currentUser.avatar = document.getElementById('setting-avatar').value.trim();
       currentUser.bio = document.getElementById('setting-bio').value.trim();
+
+      const avatarFile = document.getElementById('setting-avatar-file').files[0];
+      if (avatarFile) {
+        currentUser.avatar = await fileToDataURL(avatarFile);
+      }
 
       syncCurrentProfileToDB();
       localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
-      alert('Perfil atualizado!');
+      alert('Perfil atualizado com sucesso!');
       switchTab('profile');
     }
 
