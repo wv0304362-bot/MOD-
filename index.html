@@ -138,6 +138,34 @@
     </div>
   </div>
 
+  <!-- MODAL DE SENHA DO ADMINISTRADOR (6 QUADRADINHOS PARA LOTUX@ZRX) -->
+  <div id="admin-pin-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-zeryx-card border border-zeryx-accent rounded-2xl p-6 md:p-8 max-w-sm w-full space-y-6 text-center shadow-[0_0_40px_rgba(255,42,75,0.4)]">
+      <div>
+        <div class="w-12 h-12 rounded-xl bg-zeryx-accent/20 border border-zeryx-accent flex items-center justify-center mx-auto mb-3 text-zeryx-accent">
+          <i class="fa-solid fa-shield-halved text-xl"></i>
+        </div>
+        <h3 class="font-orbitron font-bold text-lg text-white">AUTENTICAÇÃO DE ADMIN</h3>
+        <p class="text-[11px] font-mono text-zeryx-muted mt-1">Insira a credencial de segurança de 6 caracteres (ZRX WCT)</p>
+      </div>
+
+      <!-- 6 Quadradinhos de Pin -->
+      <div class="flex justify-center gap-2">
+        <input type="text" maxlength="1" class="pin-box w-10 h-12 text-center bg-zeryx-bg border border-zeryx-border rounded-lg text-lg font-mono text-zeryx-accent focus:border-zeryx-accent focus:outline-none" oninput="moveToNextPin(this, 1)">
+        <input type="text" maxlength="1" class="pin-box w-10 h-12 text-center bg-zeryx-bg border border-zeryx-border rounded-lg text-lg font-mono text-zeryx-accent focus:border-zeryx-accent focus:outline-none" oninput="moveToNextPin(this, 2)">
+        <input type="text" maxlength="1" class="pin-box w-10 h-12 text-center bg-zeryx-bg border border-zeryx-border rounded-lg text-lg font-mono text-zeryx-accent focus:border-zeryx-accent focus:outline-none" oninput="moveToNextPin(this, 3)">
+        <input type="text" maxlength="1" class="pin-box w-10 h-12 text-center bg-zeryx-bg border border-zeryx-border rounded-lg text-lg font-mono text-zeryx-accent focus:border-zeryx-accent focus:outline-none" oninput="moveToNextPin(this, 4)">
+        <input type="text" maxlength="1" class="pin-box w-10 h-12 text-center bg-zeryx-bg border border-zeryx-border rounded-lg text-lg font-mono text-zeryx-accent focus:border-zeryx-accent focus:outline-none" oninput="moveToNextPin(this, 5)">
+        <input type="text" maxlength="1" class="pin-box w-10 h-12 text-center bg-zeryx-bg border border-zeryx-border rounded-lg text-lg font-mono text-zeryx-accent focus:border-zeryx-accent focus:outline-none" oninput="moveToNextPin(this, 6)">
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="cancelAdminAuth()" class="flex-1 bg-zeryx-bg border border-zeryx-border text-zeryx-muted hover:text-white py-2.5 rounded-lg text-xs font-orbitron font-bold">CANCELAR</button>
+        <button type="button" onclick="verifyAdminPin()" class="flex-1 neon-btn text-white py-2.5 rounded-lg text-xs font-orbitron font-bold">VERIFICAR</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOP HEADER -->
   <header id="app-header" class="hidden sticky top-0 z-40 bg-[#090a0f]/90 backdrop-blur-md border-b border-zeryx-border px-4 py-3">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
@@ -156,7 +184,10 @@
       <div class="flex items-center space-x-3 bg-zeryx-card border border-zeryx-border rounded-full py-1.5 px-3">
         <img id="header-avatar" src="" class="w-8 h-8 rounded-full bg-zeryx-bg border border-zeryx-accent object-cover">
         <div class="hidden sm:block text-left">
-          <div id="header-name" class="text-xs font-semibold text-white leading-tight">--</div>
+          <div id="header-name" class="text-xs font-semibold text-white leading-tight flex items-center gap-1.5">
+            <span id="header-name-text">--</span>
+            <span id="admin-badge" class="hidden bg-zeryx-accent/20 border border-zeryx-accent text-zeryx-accent text-[9px] px-1.5 py-0.5 rounded font-mono">DONO</span>
+          </div>
           <div id="header-username" class="text-[10px] font-mono text-zeryx-accent leading-tight">@--</div>
         </div>
         <button onclick="logoutUser()" class="text-zeryx-muted hover:text-red-500 transition-colors pl-2" title="Desconectar">
@@ -286,7 +317,10 @@
             </div>
 
             <div>
-              <h2 id="profile-display-name" class="font-orbitron font-bold text-xl text-white">--</h2>
+              <div class="flex items-center gap-2">
+                <h2 id="profile-display-name" class="font-orbitron font-bold text-xl text-white">--</h2>
+                <span id="profile-admin-badge" class="hidden bg-zeryx-accent/20 border border-zeryx-accent text-zeryx-accent text-[10px] px-2 py-0.5 rounded font-mono">DONO DO APP</span>
+              </div>
               <div id="profile-display-username" class="font-mono text-xs text-zeryx-accent mb-3">@--</div>
               <p id="profile-display-bio" class="text-sm text-zeryx-text max-w-2xl bg-zeryx-bg/50 border border-zeryx-border/50 p-3 rounded-lg">--</p>
             </div>
@@ -360,6 +394,7 @@
     let activeChatTargetUid = null;
     let currentTab = 'feed';
     let currentProfileTab = 'my-posts';
+    let pendingUserData = null;
 
     // Helper para converter arquivo em DataURL (Base64)
     function fileToDataURL(file) {
@@ -372,7 +407,7 @@
       });
     }
 
-    // 2. AUTENTICAÇÃO
+    // 2. AUTENTICAÇÃO E VALIDAÇÃO DE DONO (LOTUX@ZRX)
     function checkAuth() {
       const authScreen = document.getElementById('view-auth');
       const mainApp = document.getElementById('main-app-container');
@@ -395,12 +430,20 @@
     async function registerUser(e) {
       if (e) e.preventDefault();
       const name = document.getElementById('reg-name').value.trim();
-      const username = document.getElementById('reg-username').value.trim().replace('@', '');
+      let username = document.getElementById('reg-username').value.trim().replace('@', '');
       const avatarFile = document.getElementById('reg-avatar-file').files[0];
       const bio = document.getElementById('reg-bio').value.trim() || 'Operador registrado na rede ZERYX.';
 
       if (!name || !username) {
         alert('Preencha o Nome e Username.');
+        return;
+      }
+
+      // Se tentar usar o ID de dono LOTUX@ZRX (ou lotux@zrx), abre os 6 quadradinhos de PIN
+      if (username.toUpperCase() === 'LOTUX@ZRX' || username.toUpperCase() === 'LOTUX') {
+        pendingUserData = { name, username: 'LOTUX@ZRX', avatarFile, bio };
+        document.getElementById('admin-pin-modal').classList.remove('hidden');
+        clearPinInputs();
         return;
       }
 
@@ -414,11 +457,62 @@
         name: name,
         username: username,
         avatar: avatarUrl,
-        bio: bio
+        bio: bio,
+        isAdmin: false
       };
 
       localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
       checkAuth();
+    }
+
+    // Lógica dos 6 quadradinhos de PIN
+    function moveToNextPin(current, index) {
+      const val = current.value;
+      if (val && index < 6) {
+        const boxes = document.querySelectorAll('.pin-box');
+        boxes[index].focus();
+      }
+    }
+
+    function clearPinInputs() {
+      const boxes = document.querySelectorAll('.pin-box');
+      boxes.forEach(b => b.value = '');
+      boxes[0].focus();
+    }
+
+    function cancelAdminAuth() {
+      document.getElementById('admin-pin-modal').classList.add('hidden');
+      pendingUserData = null;
+    }
+
+    async function verifyAdminPin() {
+      const boxes = document.querySelectorAll('.pin-box');
+      let pin = '';
+      boxes.forEach(b => pin += b.value);
+
+      // A senha de administrador correta é: ZRX WCT (6 caracteres contando o espaço ou direto ZRXWCT)
+      if (pin.toUpperCase() === 'ZRXWCT' || pin.toUpperCase() === 'ZRX W') {
+        let avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=LOTUX`;
+        if (pendingUserData.avatarFile) {
+          avatarUrl = await fileToDataURL(pendingUserData.avatarFile);
+        }
+
+        currentUser = {
+          uid: 'admin_lotux_owner',
+          name: pendingUserData.name,
+          username: 'LOTUX@ZRX',
+          avatar: avatarUrl,
+          bio: pendingUserData.bio,
+          isAdmin: true
+        };
+
+        localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
+        document.getElementById('admin-pin-modal').classList.add('hidden');
+        checkAuth();
+      } else {
+        alert('Senha de administrador incorreta! Tente novamente (ZRX WCT).');
+        clearPinInputs();
+      }
     }
 
     function logoutUser() {
@@ -437,6 +531,7 @@
         username: currentUser.username,
         avatar: currentUser.avatar,
         bio: currentUser.bio,
+        isAdmin: currentUser.isAdmin || false,
         lastOnline: Date.now()
       });
       updateUIProfileHeaders();
@@ -444,9 +539,19 @@
 
     function updateUIProfileHeaders() {
       if (!currentUser) return;
-      document.getElementById('header-name').textContent = currentUser.name;
+      document.getElementById('header-name-text').textContent = currentUser.name;
       document.getElementById('header-username').textContent = '@' + currentUser.username;
       document.getElementById('header-avatar').src = currentUser.avatar;
+
+      const adminBadgeHeader = document.getElementById('admin-badge');
+      const adminBadgeProfile = document.getElementById('profile-admin-badge');
+      if (currentUser.isAdmin) {
+        if (adminBadgeHeader) adminBadgeHeader.classList.remove('hidden');
+        if (adminBadgeProfile) adminBadgeProfile.classList.remove('hidden');
+      } else {
+        if (adminBadgeHeader) adminBadgeHeader.classList.add('hidden');
+        if (adminBadgeProfile) adminBadgeProfile.classList.add('hidden');
+      }
 
       document.getElementById('profile-display-name').textContent = currentUser.name;
       document.getElementById('profile-display-username').textContent = '@' + currentUser.username;
@@ -515,6 +620,7 @@
         authorName: currentUser.name,
         authorUsername: currentUser.username,
         authorAvatar: currentUser.avatar,
+        isAdmin: currentUser.isAdmin || false,
         content: content,
         media: mediaData || null,
         isVideo: isVideoType,
@@ -589,6 +695,7 @@
               <div class="flex items-center space-x-2">
                 <img src="${escapeHtml(post.authorAvatar)}" class="w-7 h-7 rounded-full border border-zeryx-accent object-cover">
                 <span class="text-xs font-bold text-white">${escapeHtml(post.authorName)}</span>
+                ${post.isAdmin ? '<span class="bg-zeryx-accent/20 border border-zeryx-accent text-zeryx-accent text-[9px] px-1 py-0.2 rounded font-mono">DONO</span>' : ''}
                 <span class="text-[10px] font-mono text-zeryx-accent">@${escapeHtml(post.authorUsername)}</span>
               </div>
               ${post.content ? `<p class="text-xs text-zeryx-text line-clamp-2">${escapeHtml(post.content)}</p>` : ''}
