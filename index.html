@@ -807,7 +807,11 @@
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
             ${post.media ? (
               post.isVideo ? `
-                <video src="${post.media}" controls loop class="auto-play-video w-full h-full object-cover" muted></video>
+                <video src="${post.media}" loop class="auto-play-video w-full h-full object-cover"></video>
+                <!-- BOTÃO DE SOM PARA O VÍDEO -->
+                <button onclick="toggleVideoMute(this, event)" class="absolute bottom-16 right-4 z-20 w-9 h-9 rounded-full bg-black/70 backdrop-blur-md border border-zeryx-border text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors" title="Ativar/Desativar Som">
+                  <i class="fa-solid fa-volume-xmark text-xs"></i>
+                </button>
               ` : `
                 <img src="${post.media}" class="w-full h-full object-cover">
               `
@@ -892,6 +896,21 @@
       return card;
     }
 
+    function toggleVideoMute(btn, event) {
+      event.stopPropagation();
+      const video = btn.parentElement.querySelector('video');
+      if (!video) return;
+      video.muted = !video.muted;
+      const icon = btn.querySelector('i');
+      if (video.muted) {
+        icon.className = 'fa-solid fa-volume-xmark text-xs';
+        btn.classList.remove('bg-zeryx-accent');
+      } else {
+        icon.className = 'fa-solid fa-volume-high text-xs';
+        btn.classList.add('bg-zeryx-accent');
+      }
+    }
+
     function togglePostMenu(e, postId) {
       e.stopPropagation();
       const menu = document.getElementById(`post-menu-dropdown-${postId}`);
@@ -916,27 +935,80 @@
       }
     }
 
-    function viewUserProfile(uid, name, username, avatar) {
+    // VISUALIZAR PERFIL DE TERCEIROS LIMPO E SEM ID / SEM OPÇÕES DE EDITAR
+    function viewUserProfile(targetUid, name, username, avatar) {
       const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4';
+      modal.className = 'fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto';
       modal.innerHTML = `
-        <div class="bg-zeryx-card border border-zeryx-border rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
-          <button onclick="this.closest('.fixed').remove()" class="absolute top-3 right-3 text-zeryx-muted hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-          <div class="flex items-center space-x-3">
-            <img src="${escapeHtml(avatar)}" class="w-14 h-14 rounded-xl border-2 border-zeryx-accent object-cover">
-            <div>
-              <h3 class="font-orbitron font-bold text-sm text-white">${escapeHtml(name)}</h3>
-              <p class="text-xs font-mono text-zeryx-accent">@${escapeHtml(username)}</p>
+        <div class="relative max-w-lg w-full bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden shadow-2xl my-8">
+          <button onclick="this.closest('.fixed').remove()" class="absolute top-3 right-3 z-35 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          
+          <div class="h-28 bg-gradient-to-r from-zeryx-accent/30 via-purple-900/40 to-zeryx-bg"></div>
+          <div class="p-6 relative pt-0 space-y-4">
+            <div class="flex items-end justify-between -mt-10 mb-2">
+              <img src="${escapeHtml(avatar)}" class="w-20 h-20 rounded-2xl border-2 border-zeryx-accent bg-zeryx-bg object-cover shadow-xl">
+              <button onclick="this.closest('.fixed').remove(); openPrivateChatFromProfile('${targetUid}', '${escapeHtml(name)}', '${escapeHtml(username)}', '${escapeHtml(avatar)}')" class="neon-btn text-white px-4 py-2 rounded-lg text-xs font-orbitron font-bold flex items-center gap-2">
+                <i class="fa-solid fa-comment"></i> Mensagem
+              </button>
             </div>
-          </div>
-          <div class="flex gap-2 pt-2">
-            <button onclick="this.closest('.fixed').remove(); openPrivateChatFromProfile('${uid}', '${escapeHtml(name)}', '${escapeHtml(username)}', '${escapeHtml(avatar)}')" class="flex-1 neon-btn text-white py-2.5 rounded-lg text-xs font-orbitron font-bold flex items-center justify-center gap-2">
-              <i class="fa-solid fa-comment"></i> Enviar Mensagem
-            </button>
+
+            <div>
+              <h3 class="font-orbitron font-bold text-lg text-white">${escapeHtml(name)}</h3>
+              <p class="font-mono text-xs text-zeryx-accent">@${escapeHtml(username)}</p>
+            </div>
+
+            <div id="target-user-bio" class="text-xs text-zeryx-text bg-zeryx-bg/50 border border-zeryx-border/50 p-3 rounded-lg">Carregando bio...</div>
+
+            <div class="border-t border-zeryx-border pt-4">
+              <h4 class="font-orbitron text-xs font-bold text-zeryx-muted mb-3">VÍDEOS DO OPERADOR</h4>
+              <div id="target-user-posts-grid" class="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto"></div>
+            </div>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
+
+      // Buscar bio e posts do usuário no banco
+      db.ref(`users/${targetUid}`).once('value', snap => {
+        if (snap.exists() && snap.val().bio) {
+          document.getElementById('target-user-bio').textContent = snap.val().bio;
+        } else {
+          document.getElementById('target-user-bio').textContent = 'Operador registrado na rede ZERYX.';
+        }
+      });
+
+      db.ref('posts').once('value', snap => {
+        const grid = document.getElementById('target-user-posts-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        if (!snap.exists()) {
+          grid.innerHTML = `<div class="col-span-3 text-xs font-mono text-zeryx-muted text-center py-4">Nenhum vídeo publicado.</div>`;
+          return;
+        }
+
+        let count = 0;
+        snap.forEach(c => {
+          const post = c.val();
+          if (post.authorUid === targetUid) {
+            count++;
+            const item = document.createElement('div');
+            item.className = 'aspect-[9/16] bg-black rounded-lg overflow-hidden border border-zeryx-border cursor-pointer relative';
+            item.onclick = () => showPostModal(post);
+            item.innerHTML = `
+              ${post.media ? (
+                post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
+              ) : `<div class="w-full h-full flex items-center justify-center text-[9px] text-zeryx-muted font-mono">TEXTO</div>`}
+            `;
+            grid.appendChild(item);
+          }
+        });
+
+        if (count === 0) {
+          grid.innerHTML = `<div class="col-span-3 text-xs font-mono text-zeryx-muted text-center py-4">Nenhum vídeo publicado.</div>`;
+        }
+      });
     }
 
     function openPrivateChatFromProfile(uid, name, username, avatar) {
@@ -1294,7 +1366,6 @@
         return;
       }
 
-      // Se tentar mudar para o ID de administrador nas configurações, exige o PIN de 6 quadradinhos
       if (newUsername.toUpperCase() === 'LOTUX@ZRX' || newUsername.toUpperCase() === 'LOTUX') {
         pendingUserData = { name: newName, username: 'LOTUX@ZRX', avatarFile, bio: newBio, isSettings: true };
         document.getElementById('admin-pin-modal').classList.remove('hidden');
