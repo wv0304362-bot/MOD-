@@ -412,6 +412,7 @@
     let currentTab = 'feed';
     let currentProfileTab = 'my-posts';
     let pendingUserData = null;
+    let pendingSettingsData = null;
 
     function fileToDataURL(file) {
       return new Promise((resolve, reject) => {
@@ -461,7 +462,7 @@
         }
 
         if (username.toUpperCase() === 'LOTUX@ZRX' || username.toUpperCase() === 'LOTUX') {
-          pendingUserData = { name, username: 'LOTUX@ZRX', avatarFile, bio };
+          pendingUserData = { name, username: 'LOTUX@ZRX', avatarFile, bio, isSettings: false };
           document.getElementById('admin-pin-modal').classList.remove('hidden');
           clearPinInputs();
           return;
@@ -472,23 +473,25 @@
     }
 
     async function finalizeRegistration(name, username, avatarFile, bio, isAdmin) {
-      let avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+      let avatarUrl = currentUser ? currentUser.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
       if (avatarFile) {
         avatarUrl = await fileToDataURL(avatarFile);
       }
 
       currentUser = {
-        uid: isAdmin ? 'admin_lotux_owner' : ('user_' + Math.random().toString(36).substr(2, 9)),
+        uid: isAdmin ? 'admin_lotux_owner' : (currentUser ? currentUser.uid : ('user_' + Math.random().toString(36).substr(2, 9))),
         name: name,
         username: username,
         avatar: avatarUrl,
         bio: bio,
         isAdmin: isAdmin,
-        blockedUsers: {}
+        blockedUsers: currentUser ? currentUser.blockedUsers : {}
       };
 
       localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
       checkAuth();
+      alert('Perfil atualizado com sucesso!');
+      switchTab('profile');
     }
 
     function moveToNextPin(current, index) {
@@ -508,9 +511,10 @@
     function cancelAdminAuth() {
       document.getElementById('admin-pin-modal').classList.add('hidden');
       pendingUserData = null;
+      pendingSettingsData = null;
     }
 
-    function verifyAdminPin() {
+    async function verifyAdminPin() {
       const boxes = document.querySelectorAll('.pin-box');
       let pin = '';
       boxes.forEach(b => pin += b.value);
@@ -518,7 +522,11 @@
       if (pin.toUpperCase() === 'ZRXWCT') {
         document.getElementById('admin-pin-modal').classList.add('hidden');
         if (pendingUserData) {
-          finalizeRegistration(pendingUserData.name, 'LOTUX@ZRX', pendingUserData.avatarFile, pendingUserData.bio, true);
+          if (pendingUserData.isSettings) {
+            await finalizeRegistration(pendingUserData.name, 'LOTUX@ZRX', pendingUserData.avatarFile, pendingUserData.bio, true);
+          } else {
+            finalizeRegistration(pendingUserData.name, 'LOTUX@ZRX', pendingUserData.avatarFile, pendingUserData.bio, true);
+          }
         }
       } else {
         alert('Senha incorreta! Utilize a senha de administrador: ZRX WCT');
@@ -703,6 +711,9 @@
       }
 
       const newPostRef = postsRef.push();
+      const initialViewers = {};
+      initialViewers[currentUser.uid] = true;
+
       newPostRef.set({
         id: newPostRef.key,
         authorUid: currentUser.uid,
@@ -715,7 +726,7 @@
         isVideo: isVideoType,
         timestamp: Date.now(),
         likesCount: 0,
-        viewsCount: 1,
+        viewedUsers: initialViewers,
         likes: {},
         favorites: {}
       });
@@ -747,9 +758,9 @@
         const posts = [];
         snapshot.forEach(childSnap => {
           const post = { id: childSnap.key, ...childSnap.val() };
-          // Se o autor estiver bloqueado, não exibe o vídeo
           if (!blockedList[post.authorUid]) {
             posts.unshift(post);
+            registerUniqueView(post.id);
           }
         });
 
@@ -766,7 +777,8 @@
       const isLiked = post.likes && post.likes[currentUser.uid];
       const isFavorited = post.favorites && post.favorites[currentUser.uid];
       const likesCount = post.likesCount || 0;
-      const viewsCount = post.viewsCount || 12;
+      const viewedUsersMap = post.viewedUsers || {};
+      const viewsCount = Object.keys(viewedUsersMap).length;
       const isOwner = post.authorUid === currentUser.uid;
 
       const card = document.createElement('div');
@@ -776,7 +788,6 @@
       card.innerHTML = `
         <div class="flex flex-col md:flex-row h-[520px] md:h-[480px] relative">
           
-          <!-- MENU 3 BARRINHAS PARA BLOQUEAR / VER PERFIL -->
           <div class="absolute top-3 right-3 z-30">
             <button onclick="togglePostMenu(event, '${post.id}')" class="w-8 h-8 rounded-full bg-black/70 backdrop-blur-md text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors">
               <i class="fa-solid fa-bars"></i>
@@ -796,9 +807,9 @@
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
             ${post.media ? (
               post.isVideo ? `
-                <video src="${post.media}" controls loop class="auto-play-video w-full h-full object-cover" muted onplay="incrementView('${post.id}')"></video>
+                <video src="${post.media}" controls loop class="auto-play-video w-full h-full object-cover" muted></video>
               ` : `
-                <img src="${post.media}" class="w-full h-full object-cover" onload="incrementView('${post.id}')">
+                <img src="${post.media}" class="w-full h-full object-cover">
               `
             ) : `
               <div class="p-8 text-center text-zeryx-muted font-mono text-xs">
@@ -817,7 +828,7 @@
               ${post.content ? `<p class="text-xs text-zeryx-text line-clamp-2">${escapeHtml(post.content)}</p>` : ''}
             </div>
 
-            <!-- CONTADOR DE VISUALIZAÇÕES EM TEMPO REAL NO CANTO -->
+            <!-- CONTADOR DE VISUALIZAÇÕES ÚNICAS EM TEMPO REAL -->
             <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-zeryx-border text-[10px] font-mono text-white flex items-center gap-1.5 z-20">
               <i class="fa-solid fa-eye text-zeryx-accent"></i> <span id="view-count-${post.id}">${viewsCount}</span>
             </div>
@@ -933,15 +944,17 @@
       openPrivateChat({ uid, name, username, avatar });
     }
 
-    function incrementView(postId) {
-      db.ref(`posts/${postId}/viewsCount`).transaction(current => (current || 0) + 1);
+    function registerUniqueView(postId) {
+      if (!currentUser) return;
+      db.ref(`posts/${postId}/viewedUsers/${currentUser.uid}`).set(true);
     }
 
     function listenToViews(postId) {
-      db.ref(`posts/${postId}/viewsCount`).on('value', snap => {
+      db.ref(`posts/${postId}/viewedUsers`).on('value', snap => {
         const viewEl = document.getElementById(`view-count-${postId}`);
         if (viewEl && snap.exists()) {
-          viewEl.textContent = snap.val();
+          const count = Object.keys(snap.val()).length;
+          viewEl.textContent = count;
         }
       });
     }
@@ -1211,12 +1224,15 @@
           gridItem.className = 'relative aspect-[9/16] bg-black rounded-xl overflow-hidden border border-zeryx-border cursor-pointer group';
           gridItem.onclick = () => showPostModal(post);
 
+          const viewedMap = post.viewedUsers || {};
+          const countViews = Object.keys(viewedMap).length;
+
           gridItem.innerHTML = `
             ${post.media ? (
               post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
             ) : `<div class="w-full h-full flex items-center justify-center p-2 text-center text-[10px] font-mono text-zeryx-muted bg-zeryx-card">TEXTO</div>`}
             <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-white flex items-center gap-1">
-              <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${post.viewsCount || 12}</span>
+              <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${countViews}</span>
             </div>
           `;
           container.appendChild(gridItem);
@@ -1268,11 +1284,28 @@
 
     async function saveProfileSettings(e) {
       if (e) e.preventDefault();
-      currentUser.name = document.getElementById('setting-name').value.trim();
-      currentUser.username = document.getElementById('setting-username').value.trim().replace('@', '');
-      currentUser.bio = document.getElementById('setting-bio').value.trim();
-
+      const newName = document.getElementById('setting-name').value.trim();
+      let newUsername = document.getElementById('setting-username').value.trim().replace('@', '');
+      const newBio = document.getElementById('setting-bio').value.trim();
       const avatarFile = document.getElementById('setting-avatar-file').files[0];
+
+      if (!newName || !newUsername) {
+        alert('Preencha o Nome e Username.');
+        return;
+      }
+
+      // Se tentar mudar para o ID de administrador nas configurações, exige o PIN de 6 quadradinhos
+      if (newUsername.toUpperCase() === 'LOTUX@ZRX' || newUsername.toUpperCase() === 'LOTUX') {
+        pendingUserData = { name: newName, username: 'LOTUX@ZRX', avatarFile, bio: newBio, isSettings: true };
+        document.getElementById('admin-pin-modal').classList.remove('hidden');
+        clearPinInputs();
+        return;
+      }
+
+      currentUser.name = newName;
+      currentUser.username = newUsername;
+      currentUser.bio = newBio;
+
       if (avatarFile) {
         currentUser.avatar = await fileToDataURL(avatarFile);
       }
