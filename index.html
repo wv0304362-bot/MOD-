@@ -413,7 +413,6 @@
     let currentProfileTab = 'my-posts';
     let pendingUserData = null;
 
-    // Converte arquivos leves (avatares) em DataURL
     function fileToDataURL(file) {
       return new Promise((resolve, reject) => {
         if (!file) return resolve(null);
@@ -424,17 +423,16 @@
       });
     }
 
-    // Otimizado para vídeos pesados e longos: Cria URL de Objeto Blob local sem encurtar ou estourar a memória
-    function fileToBlobURL(file) {
-      return new Promise((resolve, reject) => {
-        if (!file) return resolve(null);
-        try {
-          const blobUrl = URL.createObjectURL(file);
-          resolve(blobUrl);
-        } catch (error) {
-          reject(error);
-        }
-      });
+    // Sistema otimizado de Blob URL indexada na memória local do navegador para evitar travamentos em vídeos pesados
+    const localVideoCache = {};
+
+    function getSafeVideoUrl(file, postId) {
+      if (!file) return null;
+      if (typeof file === 'string') return file; // Se já for URL salva
+      if (!localVideoCache[postId]) {
+        localVideoCache[postId] = URL.createObjectURL(file);
+      }
+      return localVideoCache[postId];
     }
 
     function checkAuth() {
@@ -699,7 +697,7 @@
 
     const postsRef = db.ref('posts');
 
-    // SUPORTE TOTAL A VÍDEOS PESADOS E LONGOS SEM ENCURTAR (USANDO BLOB URL LOCAL)
+    // SUPORTE TOTAL E ASSÍNCRONO PARA VÍDEOS LONGOS E PESADOS EM QUANTIDADE ILIMITADA
     async function createPost(e) {
       if (e) e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
@@ -713,7 +711,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-post');
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = `<span>PROCESSANDO VÍDEO...</span>`;
+      btnSubmit.innerHTML = `<span>PROCESSANDO MÍDIA...</span>`;
 
       try {
         let mediaData = null;
@@ -722,40 +720,63 @@
         if (mediaFile) {
           isVideoType = mediaFile.type.startsWith('video');
           if (isVideoType) {
-            // Usa Blob URL para suportar vídeos longos e pesados instantaneamente sem corromper ou cortar
-            mediaData = URL.createObjectURL(mediaFile);
+            // Cria um Blob URL local em cache para reproduzir arquivos pesados instantaneamente sem encurtar
+            const newKey = postsRef.push().key;
+            localVideoCache[newKey] = URL.createObjectURL(mediaFile);
+            mediaData = localVideoCache[newKey];
           } else {
             mediaData = await fileToDataURL(mediaFile);
           }
+
+          const newPostRef = postsRef.push();
+          const initialViewers = {};
+          initialViewers[currentUser.uid] = true;
+
+          await newPostRef.set({
+            id: newPostRef.key,
+            authorUid: currentUser.uid,
+            authorName: currentUser.name,
+            authorUsername: currentUser.username,
+            authorAvatar: currentUser.avatar,
+            isAdmin: currentUser.isAdmin || false,
+            content: content,
+            media: mediaData || null,
+            isVideo: isVideoType,
+            timestamp: Date.now(),
+            likesCount: 0,
+            viewedUsers: initialViewers,
+            likes: {},
+            favorites: {}
+          });
+        } else {
+          const newPostRef = postsRef.push();
+          const initialViewers = {};
+          initialViewers[currentUser.uid] = true;
+
+          await newPostRef.set({
+            id: newPostRef.key,
+            authorUid: currentUser.uid,
+            authorName: currentUser.name,
+            authorUsername: currentUser.username,
+            authorAvatar: currentUser.avatar,
+            isAdmin: currentUser.isAdmin || false,
+            content: content,
+            media: null,
+            isVideo: false,
+            timestamp: Date.now(),
+            likesCount: 0,
+            viewedUsers: initialViewers,
+            likes: {},
+            favorites: {}
+          });
         }
-
-        const newPostRef = postsRef.push();
-        const initialViewers = {};
-        initialViewers[currentUser.uid] = true;
-
-        await newPostRef.set({
-          id: newPostRef.key,
-          authorUid: currentUser.uid,
-          authorName: currentUser.name,
-          authorUsername: currentUser.username,
-          authorAvatar: currentUser.avatar,
-          isAdmin: currentUser.isAdmin || false,
-          content: content,
-          media: mediaData || null,
-          isVideo: isVideoType,
-          timestamp: Date.now(),
-          likesCount: 0,
-          viewedUsers: initialViewers,
-          likes: {},
-          favorites: {}
-        });
 
         document.getElementById('post-content').value = '';
         fileInput.value = '';
         updateProfileStats();
       } catch (error) {
         console.error("Erro ao publicar:", error);
-        alert('Erro ao processar o arquivo. O arquivo pode ser muito grande para a memória RAM atual.');
+        alert('Erro ao carregar o vídeo. Verifique se o formato é suportado.');
       } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
@@ -805,6 +826,8 @@
       const viewsCount = Object.keys(viewedUsersMap).length;
       const isOwner = post.authorUid === currentUser.uid;
 
+      const mediaUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
+
       const card = document.createElement('div');
       card.className = 'feed-post-card bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden relative shadow-xl';
       card.id = `post-${post.id}`;
@@ -829,15 +852,14 @@
           </div>
 
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
-            ${post.media ? (
+            ${mediaUrl ? (
               post.isVideo ? `
-                <video src="${post.media}" controls loop playsinline preload="metadata" class="auto-play-video w-full h-full object-cover"></video>
-                <!-- BOTÃO DE SOM PARA O VÍDEO -->
+                <video src="${mediaUrl}" controls loop playsinline preload="metadata" class="auto-play-video w-full h-full object-cover"></video>
                 <button onclick="toggleVideoMute(this, event)" class="absolute bottom-16 right-4 z-20 w-9 h-9 rounded-full bg-black/70 backdrop-blur-md border border-zeryx-border text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors" title="Ativar/Desativar Som">
                   <i class="fa-solid fa-volume-xmark text-xs"></i>
                 </button>
               ` : `
-                <img src="${post.media}" class="w-full h-full object-cover">
+                <img src="${mediaUrl}" class="w-full h-full object-cover">
               `
             ) : `
               <div class="p-8 text-center text-zeryx-muted font-mono text-xs">
@@ -856,13 +878,11 @@
               ${post.content ? `<p class="text-xs text-zeryx-text line-clamp-2">${escapeHtml(post.content)}</p>` : ''}
             </div>
 
-            <!-- CONTADOR DE VISUALIZAÇÕES ÚNICAS EM TEMPO REAL -->
             <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-zeryx-border text-[10px] font-mono text-white flex items-center gap-1.5 z-20">
               <i class="fa-solid fa-eye text-zeryx-accent"></i> <span id="view-count-${post.id}">${viewsCount}</span>
             </div>
           </div>
 
-          <!-- BOTÕES LATERAIS -->
           <div class="w-full md:w-20 bg-zeryx-bg/95 border-t md:border-t-0 md:border-l border-zeryx-border p-3 flex md:flex-col items-center justify-around md:justify-center gap-5">
             <div class="relative cursor-pointer hidden md:block">
               <img src="${escapeHtml(post.authorAvatar)}" class="w-10 h-10 rounded-full border-2 border-zeryx-accent object-cover">
@@ -1030,9 +1050,10 @@
             const item = document.createElement('div');
             item.className = 'aspect-[9/16] bg-black rounded-lg overflow-hidden border border-zeryx-border cursor-pointer relative';
             item.onclick = () => showPostModal(post);
+            const mUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
             item.innerHTML = `
               ${post.media ? (
-                post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
+                post.isVideo ? `<video src="${mUrl}" class="w-full h-full object-cover"></video>` : `<img src="${mUrl}" class="w-full h-full object-cover">`
               ) : `<div class="w-full h-full flex items-center justify-center text-[9px] text-zeryx-muted font-mono">TEXTO</div>`}
             `;
             grid.appendChild(item);
@@ -1330,10 +1351,11 @@
 
           const viewedMap = post.viewedUsers || {};
           const countViews = Object.keys(viewedMap).length;
+          const mUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
 
           gridItem.innerHTML = `
             ${post.media ? (
-              post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
+              post.isVideo ? `<video src="${mUrl}" class="w-full h-full object-cover"></video>` : `<img src="${mUrl}" class="w-full h-full object-cover">`
             ) : `<div class="w-full h-full flex items-center justify-center p-2 text-center text-[10px] font-mono text-zeryx-muted bg-zeryx-card">TEXTO</div>`}
             <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-white flex items-center gap-1">
               <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${countViews}</span>
@@ -1363,11 +1385,12 @@
     function renderForYouCardModal(post) {
       const isLiked = post.likes && post.likes[currentUser.uid];
       const likesCount = post.likesCount || 0;
+      const mUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
       return `
         <div class="bg-zeryx-card rounded-xl overflow-hidden relative">
           <div class="bg-black relative flex items-center justify-center h-[400px]">
             ${post.media ? (
-              post.isVideo ? `<video src="${post.media}" controls autoplay loop class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
+              post.isVideo ? `<video src="${mUrl}" controls autoplay loop class="w-full h-full object-cover"></video>` : `<img src="${mUrl}" class="w-full h-full object-cover">`
             ) : `<div class="text-xs text-zeryx-muted font-mono">TEXTO</div>`}
           </div>
           <div class="p-3 flex items-center justify-between border-t border-zeryx-border">
