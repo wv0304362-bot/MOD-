@@ -423,16 +423,15 @@
       });
     }
 
-    // Sistema otimizado de Blob URL indexada na memória local do navegador para evitar travamentos em vídeos pesados
-    const localVideoCache = {};
-
-    function getSafeVideoUrl(file, postId) {
-      if (!file) return null;
-      if (typeof file === 'string') return file; // Se já for URL salva
-      if (!localVideoCache[postId]) {
-        localVideoCache[postId] = URL.createObjectURL(file);
-      }
-      return localVideoCache[postId];
+    // Sistema robusto de conversão assíncrona segura em Base64 para persistência correta no Firebase
+    function fileToBase64Chunked(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
     }
 
     function checkAuth() {
@@ -697,7 +696,7 @@
 
     const postsRef = db.ref('posts');
 
-    // SUPORTE TOTAL E ASSÍNCRONO PARA VÍDEOS LONGOS E PESADOS EM QUANTIDADE ILIMITADA
+    // CONVERSÃO PERSISTENTE SEGURA PARA EVITAR QUE O VÍDEO FIQUE CORROMPIDO AO POSTAR OUTRO
     async function createPost(e) {
       if (e) e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
@@ -719,64 +718,38 @@
 
         if (mediaFile) {
           isVideoType = mediaFile.type.startsWith('video');
-          if (isVideoType) {
-            // Cria um Blob URL local em cache para reproduzir arquivos pesados instantaneamente sem encurtar
-            const newKey = postsRef.push().key;
-            localVideoCache[newKey] = URL.createObjectURL(mediaFile);
-            mediaData = localVideoCache[newKey];
-          } else {
-            mediaData = await fileToDataURL(mediaFile);
-          }
-
-          const newPostRef = postsRef.push();
-          const initialViewers = {};
-          initialViewers[currentUser.uid] = true;
-
-          await newPostRef.set({
-            id: newPostRef.key,
-            authorUid: currentUser.uid,
-            authorName: currentUser.name,
-            authorUsername: currentUser.username,
-            authorAvatar: currentUser.avatar,
-            isAdmin: currentUser.isAdmin || false,
-            content: content,
-            media: mediaData || null,
-            isVideo: isVideoType,
-            timestamp: Date.now(),
-            likesCount: 0,
-            viewedUsers: initialViewers,
-            likes: {},
-            favorites: {}
-          });
-        } else {
-          const newPostRef = postsRef.push();
-          const initialViewers = {};
-          initialViewers[currentUser.uid] = true;
-
-          await newPostRef.set({
-            id: newPostRef.key,
-            authorUid: currentUser.uid,
-            authorName: currentUser.name,
-            authorUsername: currentUser.username,
-            authorAvatar: currentUser.avatar,
-            isAdmin: currentUser.isAdmin || false,
-            content: content,
-            media: null,
-            isVideo: false,
-            timestamp: Date.now(),
-            likesCount: 0,
-            viewedUsers: initialViewers,
-            likes: {},
-            favorites: {}
-          });
+          // Converte o arquivo para Base64 persistente gravado diretamente no Firebase
+          mediaData = await fileToBase64Chunked(mediaFile);
         }
+
+        const newPostRef = postsRef.push();
+        const initialViewers = {};
+        initialViewers[currentUser.uid] = true;
+
+        await newPostRef.set({
+          id: newPostRef.key,
+          authorUid: currentUser.uid,
+          authorName: currentUser.name,
+          authorUsername: currentUser.username,
+          authorAvatar: currentUser.avatar,
+          isAdmin: currentUser.isAdmin || false,
+          content: content,
+          media: mediaData || null,
+          isVideo: isVideoType,
+          timestamp: Date.now(),
+          likesCount: 0,
+          viewedUsers: initialViewers,
+          likes: {},
+          favorites: {}
+        });
 
         document.getElementById('post-content').value = '';
         fileInput.value = '';
         updateProfileStats();
+        alert('Publicação efetuada com sucesso na matriz!');
       } catch (error) {
         console.error("Erro ao publicar:", error);
-        alert('Erro ao carregar o vídeo. Verifique se o formato é suportado.');
+        alert('Erro ao carregar o vídeo. O arquivo pode ser muito pesado para a memória do navegador.');
       } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
@@ -826,8 +799,6 @@
       const viewsCount = Object.keys(viewedUsersMap).length;
       const isOwner = post.authorUid === currentUser.uid;
 
-      const mediaUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
-
       const card = document.createElement('div');
       card.className = 'feed-post-card bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden relative shadow-xl';
       card.id = `post-${post.id}`;
@@ -852,14 +823,14 @@
           </div>
 
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
-            ${mediaUrl ? (
+            ${post.media ? (
               post.isVideo ? `
-                <video src="${mediaUrl}" controls loop playsinline preload="metadata" class="auto-play-video w-full h-full object-cover"></video>
+                <video src="${post.media}" controls loop playsinline preload="metadata" class="auto-play-video w-full h-full object-cover"></video>
                 <button onclick="toggleVideoMute(this, event)" class="absolute bottom-16 right-4 z-20 w-9 h-9 rounded-full bg-black/70 backdrop-blur-md border border-zeryx-border text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors" title="Ativar/Desativar Som">
                   <i class="fa-solid fa-volume-xmark text-xs"></i>
                 </button>
               ` : `
-                <img src="${mediaUrl}" class="w-full h-full object-cover">
+                <img src="${post.media}" class="w-full h-full object-cover">
               `
             ) : `
               <div class="p-8 text-center text-zeryx-muted font-mono text-xs">
@@ -1050,10 +1021,9 @@
             const item = document.createElement('div');
             item.className = 'aspect-[9/16] bg-black rounded-lg overflow-hidden border border-zeryx-border cursor-pointer relative';
             item.onclick = () => showPostModal(post);
-            const mUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
             item.innerHTML = `
               ${post.media ? (
-                post.isVideo ? `<video src="${mUrl}" class="w-full h-full object-cover"></video>` : `<img src="${mUrl}" class="w-full h-full object-cover">`
+                post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
               ) : `<div class="w-full h-full flex items-center justify-center text-[9px] text-zeryx-muted font-mono">TEXTO</div>`}
             `;
             grid.appendChild(item);
@@ -1351,11 +1321,10 @@
 
           const viewedMap = post.viewedUsers || {};
           const countViews = Object.keys(viewedMap).length;
-          const mUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
 
           gridItem.innerHTML = `
             ${post.media ? (
-              post.isVideo ? `<video src="${mUrl}" class="w-full h-full object-cover"></video>` : `<img src="${mUrl}" class="w-full h-full object-cover">`
+              post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
             ) : `<div class="w-full h-full flex items-center justify-center p-2 text-center text-[10px] font-mono text-zeryx-muted bg-zeryx-card">TEXTO</div>`}
             <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-white flex items-center gap-1">
               <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${countViews}</span>
@@ -1385,12 +1354,11 @@
     function renderForYouCardModal(post) {
       const isLiked = post.likes && post.likes[currentUser.uid];
       const likesCount = post.likesCount || 0;
-      const mUrl = post.isVideo ? getSafeVideoUrl(post.media, post.id) : post.media;
       return `
         <div class="bg-zeryx-card rounded-xl overflow-hidden relative">
           <div class="bg-black relative flex items-center justify-center h-[400px]">
             ${post.media ? (
-              post.isVideo ? `<video src="${mUrl}" controls autoplay loop class="w-full h-full object-cover"></video>` : `<img src="${mUrl}" class="w-full h-full object-cover">`
+              post.isVideo ? `<video src="${post.media}" controls autoplay loop class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
             ) : `<div class="text-xs text-zeryx-muted font-mono">TEXTO</div>`}
           </div>
           <div class="p-3 flex items-center justify-between border-t border-zeryx-border">
