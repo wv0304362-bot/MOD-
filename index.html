@@ -687,7 +687,7 @@
 
     const postsRef = db.ref('posts');
 
-    // LIMITE DE 100 VÍDEOS POR DIA SEM TRAVA
+    // CRIAÇÃO DE POSTS SEM TRAVAS COM LIMITE DE 100 VÍDEOS POR DIA OTIMIZADO
     async function createPost(e) {
       if (e) e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
@@ -699,64 +699,72 @@
         return;
       }
 
-      // Verificação de limite diário (100 posts nas últimas 24h)
-      const now = Date.now();
-      const oneDayAgo = now - (24 * 60 * 60 * 1000);
-      
-      const snapshot = await postsRef.orderByChild('authorUid').equalTo(currentUser.uid).once('value');
-      let todayPostsCount = 0;
-      if (snapshot.exists()) {
-        snapshot.forEach(child => {
-          const postData = child.val();
-          if (postData.timestamp && postData.timestamp > oneDayAgo) {
-            todayPostsCount++;
-          }
-        });
-      }
-
-      if (todayPostsCount >= 100) {
-        alert('Limite diário atingido! Você já publicou 100 transmissões/vídeos hoje.');
-        return;
-      }
-
       const btnSubmit = document.getElementById('btn-submit-post');
       btnSubmit.disabled = true;
       btnSubmit.innerHTML = `<span>PROCESSANDO...</span>`;
 
-      let mediaData = null;
-      let isVideoType = false;
+      try {
+        // Verificação de limite diário de forma otimizada via snapshot geral para evitar travamentos
+        const snapshot = await postsRef.once('value');
+        let todayPostsCount = 0;
+        const now = Date.now();
+        const oneDayAgo = now - (24 * 60 * 60 * 1000);
 
-      if (mediaFile) {
-        isVideoType = mediaFile.type.startsWith('video');
-        mediaData = await fileToDataURL(mediaFile);
+        if (snapshot.exists()) {
+          snapshot.forEach(child => {
+            const postData = child.val();
+            if (postData.authorUid === currentUser.uid && postData.timestamp && postData.timestamp > oneDayAgo) {
+              todayPostsCount++;
+            }
+          });
+        }
+
+        if (todayPostsCount >= 100) {
+          alert('Limite diário atingido! Você já publicou 100 transmissões/vídeos nas últimas 24 horas.');
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
+          return;
+        }
+
+        let mediaData = null;
+        let isVideoType = false;
+
+        if (mediaFile) {
+          isVideoType = mediaFile.type.startsWith('video');
+          mediaData = await fileToDataURL(mediaFile);
+        }
+
+        const newPostRef = postsRef.push();
+        const initialViewers = {};
+        initialViewers[currentUser.uid] = true;
+
+        await newPostRef.set({
+          id: newPostRef.key,
+          authorUid: currentUser.uid,
+          authorName: currentUser.name,
+          authorUsername: currentUser.username,
+          authorAvatar: currentUser.avatar,
+          isAdmin: currentUser.isAdmin || false,
+          content: content,
+          media: mediaData || null,
+          isVideo: isVideoType,
+          timestamp: Date.now(),
+          likesCount: 0,
+          viewedUsers: initialViewers,
+          likes: {},
+          favorites: {}
+        });
+
+        document.getElementById('post-content').value = '';
+        fileInput.value = '';
+        updateProfileStats();
+      } catch (error) {
+        console.error("Erro ao publicar:", error);
+        alert('Erro ao processar arquivo. Tente um arquivo menor.');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
       }
-
-      const newPostRef = postsRef.push();
-      const initialViewers = {};
-      initialViewers[currentUser.uid] = true;
-
-      newPostRef.set({
-        id: newPostRef.key,
-        authorUid: currentUser.uid,
-        authorName: currentUser.name,
-        authorUsername: currentUser.username,
-        authorAvatar: currentUser.avatar,
-        isAdmin: currentUser.isAdmin || false,
-        content: content,
-        media: mediaData || null,
-        isVideo: isVideoType,
-        timestamp: Date.now(),
-        likesCount: 0,
-        viewedUsers: initialViewers,
-        likes: {},
-        favorites: {}
-      });
-
-      document.getElementById('post-content').value = '';
-      fileInput.value = '';
-      btnSubmit.disabled = false;
-      btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
-      updateProfileStats();
     }
 
     function listenToFeedPosts() {
