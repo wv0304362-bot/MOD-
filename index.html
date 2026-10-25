@@ -173,9 +173,7 @@
         <h3 id="users-modal-title" class="font-orbitron font-bold text-sm text-white">LISTA DE USUÁRIOS</h3>
         <button onclick="closeUsersModal()" class="text-zeryx-muted hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
       </div>
-      <div id="users-modal-list" class="max-h-64 overflow-y-auto space-y-2.5">
-        <!-- Preenchido dinamicamente -->
-      </div>
+      <div id="users-modal-list" class="max-h-64 overflow-y-auto space-y-2.5"></div>
     </div>
   </div>
 
@@ -244,9 +242,7 @@
         </div>
 
         <!-- Feed List / Posts Vertical -->
-        <div id="posts-container" class="space-y-6">
-          <!-- Carregado dinamicamente -->
-        </div>
+        <div id="posts-container" class="space-y-6"></div>
       </section>
 
       <!-- VIEW: CHAT PRIVADO EM TELA CHEIA -->
@@ -264,7 +260,7 @@
           <div class="flex-1 flex flex-col h-2/3 md:h-full bg-zeryx-bg/30">
             <div id="chat-header" class="p-3.5 border-b border-zeryx-border bg-zeryx-card/80 flex items-center justify-between">
               <div class="flex items-center space-x-3">
-                <img id="chat-target-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=CYBER" class="w-8 h-8 rounded-full border border-zeryx-border bg-zeryx-bg">
+                <img id="chat-target-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=CYBER" class="w-8 h-8 rounded-full border border-zeryx-border bg-zeryx-bg object-cover">
                 <div>
                   <div id="chat-target-name" class="text-xs font-bold text-white">Selecione um contato</div>
                   <div id="chat-target-status" class="text-[10px] font-mono text-zeryx-muted">Aguardando...</div>
@@ -370,7 +366,7 @@
     </main>
   </div>
 
-  <!-- MENU DE NAVEGAÇÃO FIXO NO RODAPÉ (EMBAIXO) -->
+  <!-- MENU DE NAVEGAÇÃO FIXO NO RODAPÉ -->
   <nav id="bottom-nav-bar" class="hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090a0f]/95 backdrop-blur-md border-t border-zeryx-border py-2 px-4 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
     <div class="max-w-md mx-auto flex items-center justify-around">
       <button id="nav-feed" onclick="switchTab('feed')" class="nav-btn flex flex-col items-center space-y-1 text-zeryx-accent transition-all p-2">
@@ -397,7 +393,6 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. Configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC8pndYIbpS-K2uj_MSAs158xUEyC0kzD0",
       authDomain: "zeryx-social.firebaseapp.com",
@@ -418,7 +413,6 @@
     let currentProfileTab = 'my-posts';
     let pendingUserData = null;
 
-    // Helper para converter arquivo em DataURL (Base64)
     function fileToDataURL(file) {
       return new Promise((resolve, reject) => {
         if (!file) return resolve(null);
@@ -429,7 +423,6 @@
       });
     }
 
-    // 2. AUTENTICAÇÃO E VALIDAÇÃO RIGOROSA DO DONO (LOTUX@ZRX)
     function checkAuth() {
       const authScreen = document.getElementById('view-auth');
       const mainApp = document.getElementById('main-app-container');
@@ -467,7 +460,6 @@
           return;
         }
 
-        // Se tentar usar o ID de dono LOTUX@ZRX (ou lotux), abre o PIN de 6 quadradinhos
         if (username.toUpperCase() === 'LOTUX@ZRX' || username.toUpperCase() === 'LOTUX') {
           pendingUserData = { name, username: 'LOTUX@ZRX', avatarFile, bio };
           document.getElementById('admin-pin-modal').classList.remove('hidden');
@@ -491,14 +483,14 @@
         username: username,
         avatar: avatarUrl,
         bio: bio,
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        blockedUsers: {}
       };
 
       localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
       checkAuth();
     }
 
-    // Lógica dos 6 quadradinhos de PIN
     function moveToNextPin(current, index) {
       const val = current.value;
       const boxes = document.querySelectorAll('.pin-box');
@@ -523,7 +515,6 @@
       let pin = '';
       boxes.forEach(b => pin += b.value);
 
-      // Senha de administrador solicitada: ZRX WCT (ZRXWCT)
       if (pin.toUpperCase() === 'ZRXWCT') {
         document.getElementById('admin-pin-modal').classList.add('hidden');
         if (pendingUserData) {
@@ -545,7 +536,7 @@
 
     function syncCurrentProfileToDB() {
       if (!currentUser) return;
-      db.ref('users/' + currentUser.uid).set({
+      db.ref('users/' + currentUser.uid).update({
         uid: currentUser.uid,
         name: currentUser.name,
         username: currentUser.username,
@@ -583,26 +574,20 @@
       document.getElementById('setting-bio').value = currentUser.bio;
     }
 
-    // 3. ESTATÍSTICAS EM TEMPO REAL COM 5M PARA O DONO
     function updateProfileStats() {
       if (!currentUser) return;
-      
-      // Se for o dono supremo LOTUX@ZRX, exibe 5M seguidores e 0 seguindo em tempo real para todos
       if (currentUser.username.toUpperCase() === 'LOTUX@ZRX' || currentUser.isAdmin) {
         document.getElementById('stat-followers').textContent = '5M';
         document.getElementById('stat-following').textContent = '0';
-        
         db.ref('posts').once('value', snapshot => {
           let totalLikes = 0;
           if (snapshot.exists()) {
             snapshot.forEach(child => {
               const post = child.val();
-              if (post.authorUid === currentUser.uid) {
-                totalLikes += (post.likesCount || 0);
-              }
+              if (post.authorUid === currentUser.uid) totalLikes += (post.likesCount || 0);
             });
           }
-          document.getElementById('stat-likes').textContent = totalLikes + 148500; // Dando um boost realista de curtidas para o dono
+          document.getElementById('stat-likes').textContent = totalLikes + 148500;
         });
         return;
       }
@@ -625,7 +610,6 @@
       });
     }
 
-    // Visualizar quem está seguindo / seguidores em tempo real
     function openUsersListModal(type) {
       const modal = document.getElementById('users-modal');
       const titleEl = document.getElementById('users-modal-title');
@@ -644,13 +628,13 @@
         if (!snapshot.exists()) return;
         const users = Object.values(snapshot.val());
         
-        if (type === 'following' && (currentUser.username.toUpperCase() === 'LOTUX@ZRX')) {
+        if (type === 'following' && currentUser.username.toUpperCase() === 'LOTUX@ZRX') {
           listEl.innerHTML = `<div class="text-xs font-mono text-zeryx-muted text-center p-4">Nenhum operador sendo seguido.</div>`;
           return;
         }
 
         users.forEach(u => {
-          if (type === 'followers' && currentUser.username.toUpperCase() === 'LOTUX@ZRX') return; // Exibe a simulação global ou lista real
+          if (type === 'followers' && currentUser.username.toUpperCase() === 'LOTUX@ZRX') return;
           const div = document.createElement('div');
           div.className = 'flex items-center space-x-3 bg-zeryx-bg p-2.5 rounded-xl border border-zeryx-border';
           div.innerHTML = `
@@ -664,9 +648,7 @@
         });
 
         if (type === 'followers' && currentUser.username.toUpperCase() === 'LOTUX@ZRX') {
-          listEl.innerHTML = `
-            <div class="p-3 text-center text-xs font-mono text-zeryx-muted">Os 5.000.000 de seguidores da rede estão sincronizados na matriz ZERYX.</div>
-          `;
+          listEl.innerHTML = `<div class="p-3 text-center text-xs font-mono text-zeryx-muted">Os 5.000.000 de seguidores da rede estão sincronizados na matriz ZERYX.</div>`;
         }
       });
     }
@@ -675,7 +657,6 @@
       document.getElementById('users-modal').classList.add('hidden');
     }
 
-    // 3. NAVEGAÇÃO DE ABAS
     function switchTab(tab) {
       currentTab = tab;
       ['feed', 'chat', 'profile', 'settings'].forEach(v => {
@@ -683,14 +664,10 @@
         const navEl = document.getElementById(`nav-${v}`);
         if (v === tab) {
           if (viewEl) viewEl.classList.remove('hidden');
-          if (navEl) {
-            navEl.className = 'nav-btn flex flex-col items-center space-y-1 text-zeryx-accent transition-all p-2';
-          }
+          if (navEl) navEl.className = 'nav-btn flex flex-col items-center space-y-1 text-zeryx-accent transition-all p-2';
         } else {
           if (viewEl) viewEl.classList.add('hidden');
-          if (navEl) {
-            navEl.className = 'nav-btn flex flex-col items-center space-y-1 text-zeryx-muted hover:text-white transition-all p-2';
-          }
+          if (navEl) navEl.className = 'nav-btn flex flex-col items-center space-y-1 text-zeryx-muted hover:text-white transition-all p-2';
         }
       });
 
@@ -700,7 +677,6 @@
       }
     }
 
-    // 4. FEED "FOR YOU" COM CONTROLE AUTOMÁTICO DE VÍDEO NA TELA (INTERSECTION OBSERVER)
     const postsRef = db.ref('posts');
 
     async function createPost(e) {
@@ -739,6 +715,7 @@
         isVideo: isVideoType,
         timestamp: Date.now(),
         likesCount: 0,
+        viewsCount: 1,
         likes: {},
         favorites: {}
       });
@@ -766,9 +743,14 @@
           return;
         }
 
+        const blockedList = currentUser.blockedUsers || {};
         const posts = [];
         snapshot.forEach(childSnap => {
-          posts.unshift({ id: childSnap.key, ...childSnap.val() });
+          const post = { id: childSnap.key, ...childSnap.val() };
+          // Se o autor estiver bloqueado, não exibe o vídeo
+          if (!blockedList[post.authorUid]) {
+            posts.unshift(post);
+          }
         });
 
         posts.forEach(post => {
@@ -784,6 +766,7 @@
       const isLiked = post.likes && post.likes[currentUser.uid];
       const isFavorited = post.favorites && post.favorites[currentUser.uid];
       const likesCount = post.likesCount || 0;
+      const viewsCount = post.viewsCount || 12;
       const isOwner = post.authorUid === currentUser.uid;
 
       const card = document.createElement('div');
@@ -791,13 +774,31 @@
       card.id = `post-${post.id}`;
 
       card.innerHTML = `
-        <div class="flex flex-col md:flex-row h-[520px] md:h-[480px]">
+        <div class="flex flex-col md:flex-row h-[520px] md:h-[480px] relative">
+          
+          <!-- MENU 3 BARRINHAS PARA BLOQUEAR / VER PERFIL -->
+          <div class="absolute top-3 right-3 z-30">
+            <button onclick="togglePostMenu(event, '${post.id}')" class="w-8 h-8 rounded-full bg-black/70 backdrop-blur-md text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+            <div id="post-menu-dropdown-${post.id}" class="hidden absolute right-0 mt-2 w-40 bg-zeryx-card border border-zeryx-border rounded-xl shadow-2xl py-1 z-40 text-xs font-mono">
+              <button onclick="viewUserProfile('${post.authorUid}', '${escapeHtml(post.authorName)}', '${escapeHtml(post.authorUsername)}', '${escapeHtml(post.authorAvatar)}') " class="w-full text-left px-3 py-2 text-white hover:bg-white/5 flex items-center gap-2">
+                <i class="fa-solid fa-user text-zeryx-accent"></i> Ver Perfil
+              </button>
+              ${!isOwner ? `
+                <button onclick="blockUser('${post.authorUid}', '${escapeHtml(post.authorName)}') " class="w-full text-left px-3 py-2 text-red-400 hover:bg-white/5 flex items-center gap-2">
+                  <i class="fa-solid fa-ban"></i> Bloquear
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
             ${post.media ? (
               post.isVideo ? `
-                <video src="${post.media}" controls loop class="auto-play-video w-full h-full object-cover" muted></video>
+                <video src="${post.media}" controls loop class="auto-play-video w-full h-full object-cover" muted onplay="incrementView('${post.id}')"></video>
               ` : `
-                <img src="${post.media}" class="w-full h-full object-cover">
+                <img src="${post.media}" class="w-full h-full object-cover" onload="incrementView('${post.id}')">
               `
             ) : `
               <div class="p-8 text-center text-zeryx-muted font-mono text-xs">
@@ -815,6 +816,11 @@
               </div>
               ${post.content ? `<p class="text-xs text-zeryx-text line-clamp-2">${escapeHtml(post.content)}</p>` : ''}
             </div>
+
+            <!-- CONTADOR DE VISUALIZAÇÕES EM TEMPO REAL NO CANTO -->
+            <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-zeryx-border text-[10px] font-mono text-white flex items-center gap-1.5 z-20">
+              <i class="fa-solid fa-eye text-zeryx-accent"></i> <span id="view-count-${post.id}">${viewsCount}</span>
+            </div>
           </div>
 
           <!-- BOTÕES LATERAIS -->
@@ -823,7 +829,6 @@
               <img src="${escapeHtml(post.authorAvatar)}" class="w-10 h-10 rounded-full border-2 border-zeryx-accent object-cover">
             </div>
 
-            <!-- CURTIR -->
             <button onclick="toggleLike('${post.id}')" class="flex flex-col items-center space-y-1">
               <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center ${isLiked ? 'text-zeryx-accent border-zeryx-accent' : 'text-zeryx-muted'} transition-all">
                 <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
@@ -831,7 +836,6 @@
               <span class="text-[10px] font-mono text-zeryx-muted">${likesCount}</span>
             </button>
 
-            <!-- COMENTAR -->
             <button onclick="toggleCommentsSection('${post.id}')" class="flex flex-col items-center space-y-1">
               <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center text-zeryx-muted hover:text-white transition-all">
                 <i class="fa-regular fa-comment text-lg"></i>
@@ -839,7 +843,6 @@
               <span id="comment-count-${post.id}" class="text-[10px] font-mono text-zeryx-muted">0</span>
             </button>
 
-            <!-- FAVORITAR -->
             <button onclick="toggleFavorite('${post.id}')" class="flex flex-col items-center space-y-1">
               <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center ${isFavorited ? 'text-yellow-400 border-yellow-400' : 'text-zeryx-muted'} transition-all">
                 <i class="${isFavorited ? 'fa-solid' : 'fa-regular'} fa-bookmark text-lg"></i>
@@ -847,7 +850,6 @@
               <span class="text-[10px] font-mono text-zeryx-muted">Salvo</span>
             </button>
 
-            <!-- COMPARTILHAR -->
             <button onclick="sharePost('${post.id}')" class="flex flex-col items-center space-y-1">
               <div class="w-10 h-10 rounded-full bg-zeryx-card border border-zeryx-border flex items-center justify-center text-zeryx-muted">
                 <i class="fa-solid fa-share text-lg"></i>
@@ -863,7 +865,6 @@
           </div>
         </div>
 
-        <!-- SEÇÃO DE COMENTÁRIOS FUNCIONAL -->
         <div id="comments-section-${post.id}" class="hidden p-4 bg-zeryx-bg/95 border-t border-zeryx-border space-y-3">
           <div id="comments-list-${post.id}" class="space-y-2 max-h-48 overflow-y-auto text-xs"></div>
           <form onsubmit="submitComment(event, '${post.id}')" class="flex items-center gap-2">
@@ -876,16 +877,80 @@
       `;
 
       listenToComments(post.id);
+      listenToViews(post.id);
       return card;
     }
 
-    // Gerenciador automático para rodar apenas o vídeo visível na tela
+    function togglePostMenu(e, postId) {
+      e.stopPropagation();
+      const menu = document.getElementById(`post-menu-dropdown-${postId}`);
+      document.querySelectorAll('[id^="post-menu-dropdown-"]').forEach(m => {
+        if (m !== menu) m.classList.add('hidden');
+      });
+      menu.classList.toggle('hidden');
+    }
+
+    window.onclick = function() {
+      document.querySelectorAll('[id^="post-menu-dropdown-"]').forEach(m => m.classList.add('hidden'));
+    }
+
+    function blockUser(targetUid, targetName) {
+      if (confirm(`Deseja realmente bloquear o usuário ${targetName}? Os vídeos dele não aparecerão mais para você.`)) {
+        if (!currentUser.blockedUsers) currentUser.blockedUsers = {};
+        currentUser.blockedUsers[targetUid] = true;
+        localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
+        db.ref(`users/${currentUser.uid}/blockedUsers/${targetUid}`).set(true);
+        alert('Usuário bloqueado com sucesso.');
+        listenToFeedPosts();
+      }
+    }
+
+    function viewUserProfile(uid, name, username, avatar) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-zeryx-card border border-zeryx-border rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
+          <button onclick="this.closest('.fixed').remove()" class="absolute top-3 right-3 text-zeryx-muted hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+          <div class="flex items-center space-x-3">
+            <img src="${escapeHtml(avatar)}" class="w-14 h-14 rounded-xl border-2 border-zeryx-accent object-cover">
+            <div>
+              <h3 class="font-orbitron font-bold text-sm text-white">${escapeHtml(name)}</h3>
+              <p class="text-xs font-mono text-zeryx-accent">@${escapeHtml(username)}</p>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button onclick="this.closest('.fixed').remove(); openPrivateChatFromProfile('${uid}', '${escapeHtml(name)}', '${escapeHtml(username)}', '${escapeHtml(avatar)}')" class="flex-1 neon-btn text-white py-2.5 rounded-lg text-xs font-orbitron font-bold flex items-center justify-center gap-2">
+              <i class="fa-solid fa-comment"></i> Enviar Mensagem
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function openPrivateChatFromProfile(uid, name, username, avatar) {
+      switchTab('chat');
+      openPrivateChat({ uid, name, username, avatar });
+    }
+
+    function incrementView(postId) {
+      db.ref(`posts/${postId}/viewsCount`).transaction(current => (current || 0) + 1);
+    }
+
+    function listenToViews(postId) {
+      db.ref(`posts/${postId}/viewsCount`).on('value', snap => {
+        const viewEl = document.getElementById(`view-count-${postId}`);
+        if (viewEl && snap.exists()) {
+          viewEl.textContent = snap.val();
+        }
+      });
+    }
+
     function initVideoObserver() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           const video = entry.target.querySelector('video.auto-play-video');
           if (!video) return;
-
           if (entry.isIntersecting) {
             video.play().catch(() => {});
           } else {
@@ -916,11 +981,8 @@
     function toggleFavorite(postId) {
       const favRef = db.ref(`posts/${postId}/favorites/${currentUser.uid}`);
       favRef.once('value', snapshot => {
-        if (snapshot.exists()) {
-          favRef.remove();
-        } else {
-          favRef.set(true);
-        }
+        if (snapshot.exists()) favRef.remove();
+        else favRef.set(true);
       });
     }
 
@@ -1117,11 +1179,8 @@
       ['my-posts', 'liked-posts', 'fav-posts'].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         if (btn) {
-          if (t === tab) {
-            btn.className = 'pb-2 font-orbitron text-xs font-bold text-zeryx-accent border-b-2 border-zeryx-accent';
-          } else {
-            btn.className = 'pb-2 font-orbitron text-xs font-bold text-zeryx-muted hover:text-white';
-          }
+          if (t === tab) btn.className = 'pb-2 font-orbitron text-xs font-bold text-zeryx-accent border-b-2 border-zeryx-accent';
+          else btn.className = 'pb-2 font-orbitron text-xs font-bold text-zeryx-muted hover:text-white';
         }
       });
 
@@ -1135,13 +1194,9 @@
         const posts = [];
         snapshot.forEach(c => {
           const post = { id: c.key, ...c.val() };
-          if (tab === 'my-posts' && post.authorUid === currentUser.uid) {
-            posts.unshift(post);
-          } else if (tab === 'liked-posts' && post.likes && post.likes[currentUser.uid]) {
-            posts.unshift(post);
-          } else if (tab === 'fav-posts' && post.favorites && post.favorites[currentUser.uid]) {
-            posts.unshift(post);
-          }
+          if (tab === 'my-posts' && post.authorUid === currentUser.uid) posts.unshift(post);
+          else if (tab === 'liked-posts' && post.likes && post.likes[currentUser.uid]) posts.unshift(post);
+          else if (tab === 'fav-posts' && post.favorites && post.favorites[currentUser.uid]) posts.unshift(post);
         });
 
         if (posts.length === 0) {
@@ -1150,7 +1205,6 @@
           return;
         }
 
-        // Exibe em grade 3x3 no perfil
         container.className = 'grid grid-cols-2 md:grid-cols-3 gap-3 pb-10';
         posts.forEach(post => {
           const gridItem = document.createElement('div');
@@ -1159,18 +1213,10 @@
 
           gridItem.innerHTML = `
             ${post.media ? (
-              post.isVideo ? `
-                <video src="${post.media}" class="w-full h-full object-cover"></video>
-              ` : `
-                <img src="${post.media}" class="w-full h-full object-cover">
-              `
-            ) : `
-              <div class="w-full h-full flex items-center justify-center p-2 text-center text-[10px] font-mono text-zeryx-muted bg-zeryx-card">
-                TEXTO
-              </div>
-            `}
+              post.isVideo ? `<video src="${post.media}" class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
+            ) : `<div class="w-full h-full flex items-center justify-center p-2 text-center text-[10px] font-mono text-zeryx-muted bg-zeryx-card">TEXTO</div>`}
             <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-white flex items-center gap-1">
-              <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${(post.likesCount || 0) * 3 + 12}</span>
+              <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${post.viewsCount || 12}</span>
             </div>
           `;
           container.appendChild(gridItem);
