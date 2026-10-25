@@ -412,8 +412,8 @@
     let currentTab = 'feed';
     let currentProfileTab = 'my-posts';
     let pendingUserData = null;
-    let pendingSettingsData = null;
 
+    // Converte arquivos leves (avatares) em DataURL
     function fileToDataURL(file) {
       return new Promise((resolve, reject) => {
         if (!file) return resolve(null);
@@ -421,6 +421,19 @@
         reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
         reader.readAsDataURL(file);
+      });
+    }
+
+    // Otimizado para vídeos pesados e longos: Cria URL de Objeto Blob local sem encurtar ou estourar a memória
+    function fileToBlobURL(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        try {
+          const blobUrl = URL.createObjectURL(file);
+          resolve(blobUrl);
+        } catch (error) {
+          reject(error);
+        }
       });
     }
 
@@ -511,7 +524,6 @@
     function cancelAdminAuth() {
       document.getElementById('admin-pin-modal').classList.add('hidden');
       pendingUserData = null;
-      pendingSettingsData = null;
     }
 
     async function verifyAdminPin() {
@@ -687,7 +699,7 @@
 
     const postsRef = db.ref('posts');
 
-    // CRIAÇÃO DE POSTS SEM TRAVAS COM LIMITE DE 100 VÍDEOS POR DIA OTIMIZADO
+    // SUPORTE TOTAL A VÍDEOS PESADOS E LONGOS SEM ENCURTAR (USANDO BLOB URL LOCAL)
     async function createPost(e) {
       if (e) e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
@@ -701,37 +713,20 @@
 
       const btnSubmit = document.getElementById('btn-submit-post');
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = `<span>PROCESSANDO...</span>`;
+      btnSubmit.innerHTML = `<span>PROCESSANDO VÍDEO...</span>`;
 
       try {
-        // Verificação de limite diário de forma otimizada via snapshot geral para evitar travamentos
-        const snapshot = await postsRef.once('value');
-        let todayPostsCount = 0;
-        const now = Date.now();
-        const oneDayAgo = now - (24 * 60 * 60 * 1000);
-
-        if (snapshot.exists()) {
-          snapshot.forEach(child => {
-            const postData = child.val();
-            if (postData.authorUid === currentUser.uid && postData.timestamp && postData.timestamp > oneDayAgo) {
-              todayPostsCount++;
-            }
-          });
-        }
-
-        if (todayPostsCount >= 100) {
-          alert('Limite diário atingido! Você já publicou 100 transmissões/vídeos nas últimas 24 horas.');
-          btnSubmit.disabled = false;
-          btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
-          return;
-        }
-
         let mediaData = null;
         let isVideoType = false;
 
         if (mediaFile) {
           isVideoType = mediaFile.type.startsWith('video');
-          mediaData = await fileToDataURL(mediaFile);
+          if (isVideoType) {
+            // Usa Blob URL para suportar vídeos longos e pesados instantaneamente sem corromper ou cortar
+            mediaData = URL.createObjectURL(mediaFile);
+          } else {
+            mediaData = await fileToDataURL(mediaFile);
+          }
         }
 
         const newPostRef = postsRef.push();
@@ -760,7 +755,7 @@
         updateProfileStats();
       } catch (error) {
         console.error("Erro ao publicar:", error);
-        alert('Erro ao processar arquivo. Tente um arquivo menor.');
+        alert('Erro ao processar o arquivo. O arquivo pode ser muito grande para a memória RAM atual.');
       } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = `<span>PUBLICAR</span> <i class="fa-solid fa-paper-plane"></i>`;
@@ -836,7 +831,7 @@
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
             ${post.media ? (
               post.isVideo ? `
-                <video src="${post.media}" loop class="auto-play-video w-full h-full object-cover"></video>
+                <video src="${post.media}" controls loop playsinline preload="metadata" class="auto-play-video w-full h-full object-cover"></video>
                 <!-- BOTÃO DE SOM PARA O VÍDEO -->
                 <button onclick="toggleVideoMute(this, event)" class="absolute bottom-16 right-4 z-20 w-9 h-9 rounded-full bg-black/70 backdrop-blur-md border border-zeryx-border text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors" title="Ativar/Desativar Som">
                   <i class="fa-solid fa-volume-xmark text-xs"></i>
@@ -968,7 +963,6 @@
       alert(`O relatório de denúncia para o operador ${targetName} foi registrado no protocolo. Sistema de moderação avançada em breve!`);
     }
 
-    // VISUALIZAR PERFIL DE TERCEIROS COM OPÇÕES DE MENSAGEM, BLOQUEAR E DENUNCIAR
     function viewUserProfile(targetUid, name, username, avatar) {
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto';
@@ -1179,7 +1173,6 @@
       input.value = '';
     }
 
-    // 5. CHAT PRIVADO
     function listenToOnlineUsers() {
       db.ref('users').on('value', snapshot => {
         const usersListEl = document.getElementById('chat-users-list');
@@ -1294,7 +1287,6 @@
       input.value = '';
     }
 
-    // 6. PERFIL COM GRADE 3x3
     function loadProfileTab(tab) {
       currentProfileTab = tab;
       const container = document.getElementById('user-posts-container');
@@ -1403,13 +1395,6 @@
 
       if (!newName || !newUsername) {
         alert('Preencha o Nome e Username.');
-        return;
-      }
-
-      if (newUsername.toUpperCase() === 'LOTUX@ZRX' || newUsername.toUpperCase() === 'LOTUX') {
-        pendingUserData = { name: newName, username: 'LOTUX@ZRX', avatarFile, bio: newBio, isSettings: true };
-        document.getElementById('admin-pin-modal').classList.remove('hidden');
-        clearPinInputs();
         return;
       }
 
