@@ -95,7 +95,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
-<body class="min-h-screen flex flex-col antialiased selection:bg-zeryx-accent selection:text-white pb-20 md:pb-0">
+<body class="min-h-screen flex flex-col antialiased selection:bg-zeryx-accent selection:text-white pb-24 md:pb-0">
 
   <!-- TELA INICIAL DE CADASTRO / LOGIN -->
   <div id="view-auth" class="fixed inset-0 z-50 bg-[#090a0f] flex items-center justify-center p-4">
@@ -317,7 +317,8 @@
           <button id="tab-btn-fav-posts" onclick="loadProfileTab('fav-posts')" class="pb-2 font-orbitron text-xs font-bold text-zeryx-muted hover:text-white">FAVORITOS</button>
         </div>
 
-        <div id="user-posts-container" class="space-y-6 pb-10"></div>
+        <!-- Grade 3x3 para os vídeos do perfil -->
+        <div id="user-posts-container" class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-10"></div>
       </section>
 
       <!-- VIEW: CONFIGURAÇÕES -->
@@ -439,7 +440,7 @@
       }
     }
 
-    async function registerUser(e) {
+    function registerUser(e) {
       if (e) e.preventDefault();
       const name = document.getElementById('reg-name').value.trim();
       let username = document.getElementById('reg-username').value.trim().replace('@', '');
@@ -459,18 +460,22 @@
         return;
       }
 
+      finalizeRegistration(name, username, avatarFile, bio, false);
+    }
+
+    async function finalizeRegistration(name, username, avatarFile, bio, isAdmin) {
       let avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
       if (avatarFile) {
         avatarUrl = await fileToDataURL(avatarFile);
       }
 
       currentUser = {
-        uid: 'user_' + Math.random().toString(36).substr(2, 9),
+        uid: isAdmin ? 'admin_lotux_owner' : ('user_' + Math.random().toString(36).substr(2, 9)),
         name: name,
         username: username,
         avatar: avatarUrl,
         bio: bio,
-        isAdmin: false
+        isAdmin: isAdmin
       };
 
       localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
@@ -497,30 +502,17 @@
       pendingUserData = null;
     }
 
-    async function verifyAdminPin() {
+    function verifyAdminPin() {
       const boxes = document.querySelectorAll('.pin-box');
       let pin = '';
       boxes.forEach(b => pin += b.value);
 
       // Senha de administrador solicitada: ZRX WCT (ZRXWCT)
       if (pin.toUpperCase() === 'ZRXWCT') {
-        let avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=LOTUX`;
-        if (pendingUserData && pendingUserData.avatarFile) {
-          avatarUrl = await fileToDataURL(pendingUserData.avatarFile);
-        }
-
-        currentUser = {
-          uid: 'admin_lotux_owner',
-          name: pendingUserData ? pendingUserData.name : 'LOTUX ZRX',
-          username: 'LOTUX@ZRX',
-          avatar: avatarUrl,
-          bio: pendingUserData ? pendingUserData.bio : 'Criador original da ZRX',
-          isAdmin: true
-        };
-
-        localStorage.setItem('zeryx_session_user', JSON.stringify(currentUser));
         document.getElementById('admin-pin-modal').classList.add('hidden');
-        checkAuth();
+        if (pendingUserData) {
+          finalizeRegistration(pendingUserData.name, 'LOTUX@ZRX', pendingUserData.avatarFile, pendingUserData.bio, true);
+        }
       } else {
         alert('Senha incorreta! Utilize a senha de administrador: ZRX WCT');
         clearPinInputs();
@@ -575,7 +567,6 @@
       document.getElementById('setting-bio').value = currentUser.bio;
     }
 
-    // Calcular seguidores, seguindo e total de curtidas acumuladas
     function updateProfileStats() {
       if (!currentUser) return;
       db.ref('posts').once('value', snapshot => {
@@ -591,7 +582,7 @@
           });
         }
         document.getElementById('stat-likes').textContent = totalLikes;
-        document.getElementById('stat-followers').textContent = myPostCount * 12 + 5; // Simulação imersiva baseada em conteúdo
+        document.getElementById('stat-followers').textContent = myPostCount * 12 + 5;
         document.getElementById('stat-following').textContent = 42;
       });
     }
@@ -621,7 +612,7 @@
       }
     }
 
-    // 4. FEED "FOR YOU" COM VÍDEO VERTICAL IMERSIVO
+    // 4. FEED "FOR YOU" COM VÍDEO VERTICAL COM SOM ATIVADO
     const postsRef = db.ref('posts');
 
     async function createPost(e) {
@@ -715,7 +706,7 @@
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
             ${post.media ? (
               post.isVideo ? `
-                <video src="${post.media}" controls autoplay loop muted class="w-full h-full object-cover"></video>
+                <video src="${post.media}" controls autoplay loop class="w-full h-full object-cover"></video>
               ` : `
                 <img src="${post.media}" class="w-full h-full object-cover">
               `
@@ -726,7 +717,7 @@
               </div>
             `}
 
-            <div class="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md p-3 rounded-xl border border-zeryx-border max-w-[80%] space-y-1">
+            <div class="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md p-3 rounded-xl border border-zeryx-border max-w-[80%] space-y-1 z-10">
               <div class="flex items-center space-x-2">
                 <img src="${escapeHtml(post.authorAvatar)}" class="w-7 h-7 rounded-full border border-zeryx-accent object-cover">
                 <span class="text-xs font-bold text-white">${escapeHtml(post.authorName)}</span>
@@ -737,7 +728,7 @@
             </div>
           </div>
 
-          <!-- BOTÕES LATERAIS TIPO TIKTOK/KAWAII -->
+          <!-- BOTÕES LATERAIS -->
           <div class="w-full md:w-20 bg-zeryx-bg/95 border-t md:border-t-0 md:border-l border-zeryx-border p-3 flex md:flex-col items-center justify-around md:justify-center gap-5">
             <div class="relative cursor-pointer hidden md:block">
               <img src="${escapeHtml(post.authorAvatar)}" class="w-10 h-10 rounded-full border-2 border-zeryx-accent object-cover">
@@ -1007,7 +998,7 @@
       input.value = '';
     }
 
-    // 6. PERFIL COM ABAS
+    // 6. PERFIL COM GRADE 3x3
     function loadProfileTab(tab) {
       currentProfileTab = tab;
       const container = document.getElementById('user-posts-container');
@@ -1027,6 +1018,7 @@
 
       db.ref('posts').once('value', snapshot => {
         if (!snapshot.exists()) {
+          container.className = 'block space-y-6 pb-10';
           container.innerHTML = `<div class="text-xs font-mono text-zeryx-muted p-4 bg-zeryx-card rounded-lg border border-zeryx-border">Nenhuma publicação nesta seção.</div>`;
           return;
         }
@@ -1044,14 +1036,80 @@
         });
 
         if (posts.length === 0) {
+          container.className = 'block space-y-6 pb-10';
           container.innerHTML = `<div class="text-xs font-mono text-zeryx-muted p-4 bg-zeryx-card rounded-lg border border-zeryx-border">Nenhum item adicionado aqui.</div>`;
           return;
         }
 
+        // Exibe em grade 3x3 no perfil
+        container.className = 'grid grid-cols-2 md:grid-cols-3 gap-3 pb-10';
         posts.forEach(post => {
-          container.appendChild(renderForYouCard(post));
+          const gridItem = document.createElement('div');
+          gridItem.className = 'relative aspect-[9/16] bg-black rounded-xl overflow-hidden border border-zeryx-border cursor-pointer group';
+          gridItem.onclick = () => showPostModal(post);
+
+          gridItem.innerHTML = `
+            ${post.media ? (
+              post.isVideo ? `
+                <video src="${post.media}" class="w-full h-full object-cover"></video>
+              ` : `
+                <img src="${post.media}" class="w-full h-full object-cover">
+              `
+            ) : `
+              <div class="w-full h-full flex items-center justify-center p-2 text-center text-[10px] font-mono text-zeryx-muted bg-zeryx-card">
+                TEXTO
+              </div>
+            `}
+            <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-white flex items-center gap-1">
+              <i class="fa-solid fa-eye text-[9px] text-zeryx-accent"></i> <span>${(post.likesCount || 0) * 3 + 12}</span>
+            </div>
+          `;
+          container.appendChild(gridItem);
         });
       });
+    }
+
+    // Modal para abrir o vídeo ao clicar na miniatura da grade 3x3 do perfil
+    function showPostModal(post) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="relative max-w-lg w-full bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden shadow-2xl">
+          <button onclick="this.closest('.fixed').remove()" class="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-zeryx-accent transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="p-2">
+            ${renderForYouCardModal(post)}
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function renderForYouCardModal(post) {
+      const isLiked = post.likes && post.likes[currentUser.uid];
+      const likesCount = post.likesCount || 0;
+      return `
+        <div class="bg-zeryx-card rounded-xl overflow-hidden relative">
+          <div class="bg-black relative flex items-center justify-center h-[400px]">
+            ${post.media ? (
+              post.isVideo ? `<video src="${post.media}" controls autoplay loop class="w-full h-full object-cover"></video>` : `<img src="${post.media}" class="w-full h-full object-cover">`
+            ) : `<div class="text-xs text-zeryx-muted font-mono">TEXTO</div>`}
+          </div>
+          <div class="p-3 flex items-center justify-between border-t border-zeryx-border">
+            <div class="flex items-center space-x-2">
+              <img src="${escapeHtml(post.authorAvatar)}" class="w-8 h-8 rounded-full border border-zeryx-accent object-cover">
+              <div>
+                <div class="text-xs font-bold text-white">${escapeHtml(post.authorName)}</div>
+                <div class="text-[10px] font-mono text-zeryx-accent">@${escapeHtml(post.authorUsername)}</div>
+              </div>
+            </div>
+            <button onclick="toggleLike('${post.id}')" class="text-zeryx-accent flex items-center gap-1 text-xs font-mono">
+              <i class="fa-solid fa-heart"></i> <span>${likesCount}</span>
+            </button>
+          </div>
+        </div>
+      `;
     }
 
     async function saveProfileSettings(e) {
