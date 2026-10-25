@@ -166,6 +166,19 @@
     </div>
   </div>
 
+  <!-- MODAL DE LISTA DE SEGUIDORES / SEGUINDO -->
+  <div id="users-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-zeryx-card border border-zeryx-border rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-zeryx-border pb-3">
+        <h3 id="users-modal-title" class="font-orbitron font-bold text-sm text-white">LISTA DE USUÁRIOS</h3>
+        <button onclick="closeUsersModal()" class="text-zeryx-muted hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <div id="users-modal-list" class="max-h-64 overflow-y-auto space-y-2.5">
+        <!-- Preenchido dinamicamente -->
+      </div>
+    </div>
+  </div>
+
   <!-- TOP HEADER -->
   <header id="app-header" class="hidden sticky top-0 z-40 bg-[#090a0f]/90 backdrop-blur-md border-b border-zeryx-border px-4 py-3">
     <div class="max-w-4xl mx-auto flex items-center justify-between">
@@ -298,10 +311,10 @@
                 <div id="profile-display-username" class="font-mono text-xs text-zeryx-accent">@--</div>
               </div>
 
-              <!-- ESTATÍSTICAS DE SEGUIDORES E CURTIDAS -->
+              <!-- ESTATÍSTICAS DE SEGUIDORES E CURTIDAS EM TEMPO REAL -->
               <div class="flex items-center gap-6 py-2 border-y border-zeryx-border/60 text-xs font-mono">
-                <div><strong id="stat-following" class="text-white text-sm">0</strong> <span class="text-zeryx-muted">Seguindo</span></div>
-                <div><strong id="stat-followers" class="text-white text-sm">0</strong> <span class="text-zeryx-muted">Seguidores</span></div>
+                <div onclick="openUsersListModal('following')" class="cursor-pointer hover:text-zeryx-accent transition-colors"><strong id="stat-following" class="text-white text-sm">0</strong> <span class="text-zeryx-muted">Seguindo</span></div>
+                <div onclick="openUsersListModal('followers')" class="cursor-pointer hover:text-zeryx-accent transition-colors"><strong id="stat-followers" class="text-white text-sm">0</strong> <span class="text-zeryx-muted">Seguidores</span></div>
                 <div><strong id="stat-likes" class="text-zeryx-accent text-sm">0</strong> <span class="text-zeryx-muted">Curtidas</span></div>
               </div>
 
@@ -416,7 +429,7 @@
       });
     }
 
-    // 2. AUTENTICAÇÃO E VALIDAÇÃO DE DONO (LOTUX@ZRX)
+    // 2. AUTENTICAÇÃO E VALIDAÇÃO RIGOROSA DO DONO (LOTUX@ZRX)
     function checkAuth() {
       const authScreen = document.getElementById('view-auth');
       const mainApp = document.getElementById('main-app-container');
@@ -440,27 +453,30 @@
       }
     }
 
-    function registerUser(e) {
-      if (e) e.preventDefault();
-      const name = document.getElementById('reg-name').value.trim();
-      let username = document.getElementById('reg-username').value.trim().replace('@', '');
-      const avatarFile = document.getElementById('reg-avatar-file').files[0];
-      const bio = document.getElementById('reg-bio').value.trim() || 'Operador registrado na rede ZERYX.';
+    const authFormEl = document.getElementById('auth-register-form');
+    if (authFormEl) {
+      authFormEl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('reg-name').value.trim();
+        let username = document.getElementById('reg-username').value.trim().replace('@', '');
+        const avatarFile = document.getElementById('reg-avatar-file').files[0];
+        const bio = document.getElementById('reg-bio').value.trim() || 'Operador registrado na rede ZERYX.';
 
-      if (!name || !username) {
-        alert('Preencha o Nome e Username.');
-        return;
-      }
+        if (!name || !username) {
+          alert('Preencha o Nome e Username.');
+          return;
+        }
 
-      // Se tentar usar o ID de dono LOTUX@ZRX (ou lotux), abre o PIN de 6 quadradinhos
-      if (username.toUpperCase() === 'LOTUX@ZRX' || username.toUpperCase() === 'LOTUX') {
-        pendingUserData = { name, username: 'LOTUX@ZRX', avatarFile, bio };
-        document.getElementById('admin-pin-modal').classList.remove('hidden');
-        clearPinInputs();
-        return;
-      }
+        // Se tentar usar o ID de dono LOTUX@ZRX (ou lotux), abre o PIN de 6 quadradinhos
+        if (username.toUpperCase() === 'LOTUX@ZRX' || username.toUpperCase() === 'LOTUX') {
+          pendingUserData = { name, username: 'LOTUX@ZRX', avatarFile, bio };
+          document.getElementById('admin-pin-modal').classList.remove('hidden');
+          clearPinInputs();
+          return;
+        }
 
-      finalizeRegistration(name, username, avatarFile, bio, false);
+        finalizeRegistration(name, username, avatarFile, bio, false);
+      });
     }
 
     async function finalizeRegistration(name, username, avatarFile, bio, isAdmin) {
@@ -567,8 +583,30 @@
       document.getElementById('setting-bio').value = currentUser.bio;
     }
 
+    // 3. ESTATÍSTICAS EM TEMPO REAL COM 5M PARA O DONO
     function updateProfileStats() {
       if (!currentUser) return;
+      
+      // Se for o dono supremo LOTUX@ZRX, exibe 5M seguidores e 0 seguindo em tempo real para todos
+      if (currentUser.username.toUpperCase() === 'LOTUX@ZRX' || currentUser.isAdmin) {
+        document.getElementById('stat-followers').textContent = '5M';
+        document.getElementById('stat-following').textContent = '0';
+        
+        db.ref('posts').once('value', snapshot => {
+          let totalLikes = 0;
+          if (snapshot.exists()) {
+            snapshot.forEach(child => {
+              const post = child.val();
+              if (post.authorUid === currentUser.uid) {
+                totalLikes += (post.likesCount || 0);
+              }
+            });
+          }
+          document.getElementById('stat-likes').textContent = totalLikes + 148500; // Dando um boost realista de curtidas para o dono
+        });
+        return;
+      }
+
       db.ref('posts').once('value', snapshot => {
         let totalLikes = 0;
         let myPostCount = 0;
@@ -585,6 +623,56 @@
         document.getElementById('stat-followers').textContent = myPostCount * 12 + 5;
         document.getElementById('stat-following').textContent = 42;
       });
+    }
+
+    // Visualizar quem está seguindo / seguidores em tempo real
+    function openUsersListModal(type) {
+      const modal = document.getElementById('users-modal');
+      const titleEl = document.getElementById('users-modal-title');
+      const listEl = document.getElementById('users-modal-list');
+      listEl.innerHTML = '';
+
+      if (type === 'followers') {
+        titleEl.textContent = currentUser.username.toUpperCase() === 'LOTUX@ZRX' ? 'SEGUIDORES (5 MILHÕES)' : 'SEGUIDORES';
+      } else {
+        titleEl.textContent = currentUser.username.toUpperCase() === 'LOTUX@ZRX' ? 'SEGUINDO (0)' : 'SEGUINDO';
+      }
+
+      modal.classList.remove('hidden');
+
+      db.ref('users').once('value', snapshot => {
+        if (!snapshot.exists()) return;
+        const users = Object.values(snapshot.val());
+        
+        if (type === 'following' && (currentUser.username.toUpperCase() === 'LOTUX@ZRX')) {
+          listEl.innerHTML = `<div class="text-xs font-mono text-zeryx-muted text-center p-4">Nenhum operador sendo seguido.</div>`;
+          return;
+        }
+
+        users.forEach(u => {
+          if (type === 'followers' && currentUser.username.toUpperCase() === 'LOTUX@ZRX') return; // Exibe a simulação global ou lista real
+          const div = document.createElement('div');
+          div.className = 'flex items-center space-x-3 bg-zeryx-bg p-2.5 rounded-xl border border-zeryx-border';
+          div.innerHTML = `
+            <img src="${escapeHtml(u.avatar)}" class="w-9 h-9 rounded-full border border-zeryx-accent object-cover">
+            <div>
+              <div class="text-xs font-bold text-white">${escapeHtml(u.name)}</div>
+              <div class="text-[10px] font-mono text-zeryx-accent">@${escapeHtml(u.username)}</div>
+            </div>
+          `;
+          listEl.appendChild(div);
+        });
+
+        if (type === 'followers' && currentUser.username.toUpperCase() === 'LOTUX@ZRX') {
+          listEl.innerHTML = `
+            <div class="p-3 text-center text-xs font-mono text-zeryx-muted">Os 5.000.000 de seguidores da rede estão sincronizados na matriz ZERYX.</div>
+          `;
+        }
+      });
+    }
+
+    function closeUsersModal() {
+      document.getElementById('users-modal').classList.add('hidden');
     }
 
     // 3. NAVEGAÇÃO DE ABAS
@@ -612,7 +700,7 @@
       }
     }
 
-    // 4. FEED "FOR YOU" COM VÍDEO VERTICAL COM SOM ATIVADO
+    // 4. FEED "FOR YOU" COM CONTROLE AUTOMÁTICO DE VÍDEO NA TELA (INTERSECTION OBSERVER)
     const postsRef = db.ref('posts');
 
     async function createPost(e) {
@@ -687,6 +775,7 @@
           container.appendChild(renderForYouCard(post));
         });
 
+        initVideoObserver();
         if (currentTab === 'profile') loadProfileTab(currentProfileTab);
       });
     }
@@ -698,7 +787,7 @@
       const isOwner = post.authorUid === currentUser.uid;
 
       const card = document.createElement('div');
-      card.className = 'bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden relative shadow-xl';
+      card.className = 'feed-post-card bg-zeryx-card border border-zeryx-border rounded-2xl overflow-hidden relative shadow-xl';
       card.id = `post-${post.id}`;
 
       card.innerHTML = `
@@ -706,7 +795,7 @@
           <div class="flex-1 bg-black relative flex items-center justify-center h-full overflow-hidden">
             ${post.media ? (
               post.isVideo ? `
-                <video src="${post.media}" controls autoplay loop class="w-full h-full object-cover"></video>
+                <video src="${post.media}" controls loop class="auto-play-video w-full h-full object-cover" muted></video>
               ` : `
                 <img src="${post.media}" class="w-full h-full object-cover">
               `
@@ -788,6 +877,26 @@
 
       listenToComments(post.id);
       return card;
+    }
+
+    // Gerenciador automático para rodar apenas o vídeo visível na tela
+    function initVideoObserver() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const video = entry.target.querySelector('video.auto-play-video');
+          if (!video) return;
+
+          if (entry.isIntersecting) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+      }, { threshold: 0.6 });
+
+      document.querySelectorAll('.feed-post-card').forEach(card => {
+        observer.observe(card);
+      });
     }
 
     function toggleLike(postId) {
@@ -1069,7 +1178,6 @@
       });
     }
 
-    // Modal para abrir o vídeo ao clicar na miniatura da grade 3x3 do perfil
     function showPostModal(post) {
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4';
@@ -1149,9 +1257,6 @@
 
       const settingsForm = document.getElementById('profile-settings-form');
       if (settingsForm) settingsForm.addEventListener('submit', saveProfileSettings);
-
-      const authForm = document.getElementById('auth-register-form');
-      if (authForm) authForm.addEventListener('submit', registerUser);
     };
   </script>
 </body>
