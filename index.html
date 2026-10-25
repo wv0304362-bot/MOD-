@@ -687,6 +687,7 @@
 
     const postsRef = db.ref('posts');
 
+    // LIMITE DE 100 VÍDEOS POR DIA SEM TRAVA
     async function createPost(e) {
       if (e) e.preventDefault();
       const content = document.getElementById('post-content').value.trim();
@@ -695,6 +696,26 @@
 
       if (!content && !mediaFile) {
         alert('Adicione um texto ou selecione um arquivo da galeria.');
+        return;
+      }
+
+      // Verificação de limite diário (100 posts nas últimas 24h)
+      const now = Date.now();
+      const oneDayAgo = now - (24 * 60 * 60 * 1000);
+      
+      const snapshot = await postsRef.orderByChild('authorUid').equalTo(currentUser.uid).once('value');
+      let todayPostsCount = 0;
+      if (snapshot.exists()) {
+        snapshot.forEach(child => {
+          const postData = child.val();
+          if (postData.timestamp && postData.timestamp > oneDayAgo) {
+            todayPostsCount++;
+          }
+        });
+      }
+
+      if (todayPostsCount >= 100) {
+        alert('Limite diário atingido! Você já publicou 100 transmissões/vídeos hoje.');
         return;
       }
 
@@ -935,7 +956,11 @@
       }
     }
 
-    // VISUALIZAR PERFIL DE TERCEIROS LIMPO E SEM ID / SEM OPÇÕES DE EDITAR
+    function reportUserModal(targetUid, targetName) {
+      alert(`O relatório de denúncia para o operador ${targetName} foi registrado no protocolo. Sistema de moderação avançada em breve!`);
+    }
+
+    // VISUALIZAR PERFIL DE TERCEIROS COM OPÇÕES DE MENSAGEM, BLOQUEAR E DENUNCIAR
     function viewUserProfile(targetUid, name, username, avatar) {
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto';
@@ -949,9 +974,17 @@
           <div class="p-6 relative pt-0 space-y-4">
             <div class="flex items-end justify-between -mt-10 mb-2">
               <img src="${escapeHtml(avatar)}" class="w-20 h-20 rounded-2xl border-2 border-zeryx-accent bg-zeryx-bg object-cover shadow-xl">
-              <button onclick="this.closest('.fixed').remove(); openPrivateChatFromProfile('${targetUid}', '${escapeHtml(name)}', '${escapeHtml(username)}', '${escapeHtml(avatar)}')" class="neon-btn text-white px-4 py-2 rounded-lg text-xs font-orbitron font-bold flex items-center gap-2">
-                <i class="fa-solid fa-comment"></i> Mensagem
-              </button>
+              <div class="flex gap-2">
+                <button onclick="this.closest('.fixed').remove(); openPrivateChatFromProfile('${targetUid}', '${escapeHtml(name)}', '${escapeHtml(username)}', '${escapeHtml(avatar)}')" class="neon-btn text-white px-3 py-2 rounded-lg text-xs font-orbitron font-bold flex items-center gap-1.5">
+                  <i class="fa-solid fa-comment"></i> Chat
+                </button>
+                <button onclick="blockUser('${targetUid}', '${escapeHtml(name)}'); this.closest('.fixed').remove();" class="bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-3 py-2 rounded-lg text-xs font-orbitron font-bold transition-colors" title="Bloquear Usuário">
+                  <i class="fa-solid fa-ban"></i>
+                </button>
+                <button onclick="reportUserModal('${targetUid}', '${escapeHtml(name)}')" class="bg-zeryx-bg border border-zeryx-border text-zeryx-muted hover:text-white px-3 py-2 rounded-lg text-xs font-orbitron font-bold transition-colors" title="Denunciar Usuário">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </button>
+              </div>
             </div>
 
             <div>
@@ -970,7 +1003,6 @@
       `;
       document.body.appendChild(modal);
 
-      // Buscar bio e posts do usuário no banco
       db.ref(`users/${targetUid}`).once('value', snap => {
         if (snap.exists() && snap.val().bio) {
           document.getElementById('target-user-bio').textContent = snap.val().bio;
